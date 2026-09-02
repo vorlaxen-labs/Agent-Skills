@@ -1,5 +1,8 @@
 # Vorlaxen Agent Skills
 
+[![CI](https://img.shields.io/github/actions/workflow/status/vorlaxen-labs/agent-skills/ci.yml?branch=main&label=CI)](https://github.com/vorlaxen-labs/agent-skills/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@vorlaxen-labs/agent-skills?label=npm)](https://www.npmjs.com/package/@vorlaxen-labs/agent-skills)
+
 **Decision boundaries for AI coding agents** — what they may decide, what they must not, and when to stop and ask.
 
 Works with Cursor, Claude Code, Copilot, Windsurf, Codex, Gemini CLI, and any tool that reads custom instructions.
