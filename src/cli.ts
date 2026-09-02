@@ -10,14 +10,17 @@ import { registerRemoveCommand } from "./commands/remove.js";
 import { registerStatusCommand } from "./commands/status.js";
 import { registerUninstallCommand } from "./commands/uninstall.js";
 import { registerUpdateCommand } from "./commands/update.js";
+import { trackCommand } from "./telemetry/track.js";
 import { getPackageVersion } from "./version.js";
 
 const program = new Command();
+let commandStartedAt = 0;
 
 program
   .name("agent-skills")
   .description("Install Vorlaxen Agent Skills into your project")
-  .version(getPackageVersion());
+  .version(getPackageVersion())
+  .option("--no-telemetry", "Disable anonymous usage telemetry for this run");
 
 registerInitCommand(program);
 registerListCommand(program);
@@ -29,6 +32,22 @@ registerAddCommand(program);
 registerRemoveCommand(program);
 registerStatusCommand(program);
 registerCompletionCommand(program);
+
+program.hook("preAction", () => {
+  commandStartedAt = Date.now();
+});
+
+program.hook("postAction", (_thisCommand, actionCommand) => {
+  const globals = actionCommand.optsWithGlobals() as { noTelemetry?: boolean };
+  trackCommand({
+    command: actionCommand.name(),
+    durationMs: Date.now() - commandStartedAt,
+    exitCode: typeof process.exitCode === "number" ? process.exitCode : 0,
+    noTelemetry: globals.noTelemetry ?? false,
+    commandOpts: actionCommand.opts() as Record<string, unknown>,
+    args: actionCommand.args as string[],
+  });
+});
 
 program.parseAsync().catch((err: unknown) => {
   console.error(err instanceof Error ? err.message : err);
