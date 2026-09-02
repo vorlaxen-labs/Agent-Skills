@@ -17,6 +17,10 @@ export function setOutputOptions(options: Partial<OutputOptions>): OutputOptions
   return outputOptions;
 }
 
+export function getOutputOptions(): OutputOptions {
+  return outputOptions;
+}
+
 export function logVerbose(message: string): void {
   if (outputOptions.verbose) {
     console.error(`[verbose] ${message}`);
@@ -100,5 +104,86 @@ export function printList(): void {
     );
   }
 
+  console.log("");
+}
+
+export interface DoctorCheck {
+  name: string;
+  status: "ok" | "warn" | "error";
+  message: string;
+}
+
+export interface DoctorResultPayload {
+  manifestFound: boolean;
+  checks: DoctorCheck[];
+  manifestPath?: string;
+}
+
+export function printDoctorResult(payload: DoctorResultPayload): void {
+  if (outputOptions.json) {
+    console.log(JSON.stringify(payload, null, 2));
+    return;
+  }
+
+  console.log("\nAgent Skills Doctor\n");
+  if (!payload.manifestFound) {
+    console.log("  ✗ No installation found — run `agent-skills init` first.\n");
+    return;
+  }
+
+  for (const check of payload.checks) {
+    const icon = check.status === "ok" ? "✓" : check.status === "warn" ? "!" : "✗";
+    console.log(`  ${icon} ${check.name}: ${check.message}`);
+  }
+  if (payload.manifestPath) {
+    console.log(`\nManifest: ${payload.manifestPath}`);
+  }
+  console.log("");
+}
+
+export interface DiffResultPayload {
+  files: import("./diff/unified.js").FileDiff[];
+}
+
+export function printDiffResult(payload: DiffResultPayload): void {
+  if (outputOptions.json) {
+    console.log(JSON.stringify(payload, null, 2));
+    return;
+  }
+
+  console.log("\nDiff vs installed snapshot:\n");
+  for (const file of payload.files) {
+    console.log(`  ${file.status.padEnd(10)} ${file.dest}`);
+    if (file.diff) {
+      console.log(file.diff.split("\n").map((l) => `    ${l}`).join("\n"));
+      console.log("");
+    }
+  }
+  console.log("");
+}
+
+export interface UninstallResultPayload {
+  removed: string[];
+  skipped: string[];
+  dryRun: boolean;
+}
+
+export function printUninstallResult(payload: UninstallResultPayload): void {
+  if (outputOptions.json) {
+    console.log(JSON.stringify(payload, null, 2));
+    return;
+  }
+
+  const verb = payload.dryRun ? "Would remove" : "Removed";
+  console.log(`\n${verb} ${payload.removed.length} file(s):\n`);
+  for (const file of payload.removed) {
+    console.log(`  ✓ ${file}`);
+  }
+  if (payload.skipped.length > 0) {
+    console.log(`\nSkipped ${payload.skipped.length} file(s):\n`);
+    for (const file of payload.skipped) {
+      console.log(`  ○ ${file}`);
+    }
+  }
   console.log("");
 }

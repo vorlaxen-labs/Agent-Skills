@@ -1,83 +1,42 @@
 import { checkbox, select } from "@inquirer/prompts";
 import { Command, InvalidArgumentError } from "commander";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { PLATFORMS, SKILLS, type Platform } from "../catalog.js";
-import { detectConflicts } from "../conflict/detect.js";
-import { resolvePolicy } from "../conflict/resolve.js";
-import type {
-  AppendOrder,
-  ConflictPolicy,
-  ConflictStrategy,
-} from "../conflict/types.js";
-import { executePlan } from "../install/executor.js";
-import { buildManifest, writeInstallManifest } from "../install/manifest.js";
-import { planInstall } from "../install/planners/index.js";
-import type { InstallContext } from "../install/types.js";
 import {
-  logVerbose,
+  parseAppendOrder,
+  parseConflictStrategy,
+  registerSharedInstallFlags,
+} from "../cli-options.js";
+import { runInstall } from "../install/run.js";
+import {
   platformLabel,
   printInitResult,
   setOutputOptions,
 } from "../output.js";
-import { resolveSource, type RemoteRef } from "../source/resolve.js";
 import {
   parsePlatform,
   parseSkillIds,
   ValidationError,
 } from "../validate.js";
-import { getPackageVersion } from "../version.js";
 
 export interface InitOptions {
   cwd?: string;
   platform?: string;
   skills?: string[];
-  remote?: RemoteRef;
+  remote?: boolean | string;
   yes?: boolean;
   dryRun?: boolean;
   verbose?: boolean;
   json?: boolean;
-  onConflict?: ConflictStrategy;
-  appendOrder?: AppendOrder;
+  onConflict?: ReturnType<typeof parseConflictStrategy>;
+  appendOrder?: ReturnType<typeof parseAppendOrder>;
+  noCache?: boolean;
 }
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
 const platformIds = PLATFORMS.map((p) => p.id).join(", ");
 const skillIds = SKILLS.map((s) => s.id).join(", ");
 
-function collectPaths(skillIds: string[]): string[] {
-  const set = new Set<string>();
-  for (const skill of SKILLS) {
-    if (skillIds.includes(skill.id)) {
-      for (const p of skill.paths) set.add(p);
-    }
-  }
-  return [...set];
-}
-
-function parseConflictStrategy(value: string): ConflictStrategy {
-  const normalized = value.trim() as ConflictStrategy;
-  if (!["replace", "append", "skip"].includes(normalized)) {
-    throw new InvalidArgumentError(
-      `Invalid on-conflict mode "${value}". Use: replace, append, or skip.`,
-    );
-  }
-  return normalized;
-}
-
-function parseAppendOrder(value: string): AppendOrder {
-  const normalized = value.trim() as AppendOrder;
-  if (!["existing-first", "vorlaxen-first"].includes(normalized)) {
-    throw new InvalidArgumentError(
-      `Invalid append-order "${value}". Use: existing-first or vorlaxen-first.`,
-    );
-  }
-  return normalized;
-}
-
 export async function runInit(options: InitOptions = {}): Promise<void> {
   const cwd = options.cwd ?? process.cwd();
-  const packageVersion = getPackageVersion();
   const output = setOutputOptions({
     verbose: options.verbose ?? false,
     json: options.json ?? false,
@@ -117,60 +76,31 @@ export async function runInit(options: InitOptions = {}): Promise<void> {
     );
   }
 
-  const paths = collectPaths(selectedIds);
-  const bundledRoot = join(__dirname, "..", "..", "bundled");
-  const source = resolveSource(options.remote, packageVersion, bundledRoot);
-
-  logVerbose(`Fetching paths: ${paths.join(", ")}`);
-  if (!output.json) console.log("\nFetching selected skills…");
-
-  const files = await source.fetch(paths);
-  const skills = SKILLS.filter((s) => selectedIds.includes(s.id));
-  const ctx: InstallContext = { cwd, skills, files };
-
-  const planned = planInstall(platform, ctx);
-  logVerbose(`Planned ${planned.length} file write(s)`);
-
-  const conflicts = await detectConflicts(planned);
-  logVerbose(`Detected ${conflicts.length} conflict(s)`);
-
-  const policy: ConflictPolicy | null = await resolvePolicy(conflicts, {
-    yes: options.yes,
+  const installResult = await runInstall({
+    cwd,
+    platform,
+    skillIds: selectedIds,
+    remote: options.remote,
+    dryRun: options.dryRun,
     onConflict: options.onConflict,
     appendOrder: options.appendOrder,
-    interactive: !options.yes && !options.onConflict,
+    yes: options.yes,
+    yesConflictDefault: "append",
+    noCache: options.noCache,
   });
-
-  const result = await executePlan(planned, {
-    dryRun: options.dryRun,
-    policy,
-  });
-
-  let manifestPath: string | undefined;
-  if (!options.dryRun && result.written.length > 0) {
-    const manifest = buildManifest(
-      platform,
-      selectedIds,
-      options.remote,
-      policy,
-      result,
-    );
-    manifestPath = await writeInstallManifest(cwd, manifest);
-    logVerbose(`Wrote manifest to ${manifestPath}`);
-  }
 
   printInitResult({
-    platform,
-    platformLabel: platformLabel(platform),
-    result,
-    conflictPolicy: policy,
+    platform: installResult.platform,
+    platformLabel: platformLabel(installResult.platform),
+    result: installResult.result,
+    conflictPolicy: installResult.conflictPolicy,
     dryRun: options.dryRun ?? false,
-    manifestPath,
+    manifestPath: installResult.manifestPath,
   });
 }
 
 export function registerInitCommand(program: Command): void {
-  program
+  const cmd = program
     .command("init")
     .description("Interactive setup — pick platform and skills")
     .option(
@@ -203,38 +133,28 @@ export function registerInitCommand(program: Command): void {
       "-r, --remote [ref]",
       "Fetch from GitHub: omit ref for package version tag, or pass e.g. main for latest",
     )
-    .option("-y, --yes", "Skip prompts; use defaults (AGENTS.md platform defaults)")
-    .option("-C, --cwd <dir>", "Target project directory", process.cwd())
-    .option("--dry-run", "Show planned writes without changing files")
-    .option("--verbose", "Verbose logging")
-    .option("--json", "Machine-readable output")
-    .option(
-      "--on-conflict <mode>",
-      "Conflict strategy: replace, append, or skip",
-      parseConflictStrategy,
-    )
-    .option(
-      "--append-order <order>",
-      "When appending: existing-first or vorlaxen-first",
-      parseAppendOrder,
-    )
-    .action(async (opts) => {
-      let remote: boolean | string | undefined;
-      if (opts.remote !== undefined) {
-        remote = opts.remote === true ? true : opts.remote;
-      }
+    .option("-y, --yes", "Skip prompts; use defaults (AGENTS.md platform defaults)");
 
-      await runInit({
-        cwd: opts.cwd,
-        platform: opts.platform,
-        skills: opts.skills,
-        remote,
-        yes: opts.yes,
-        dryRun: opts.dryRun,
-        verbose: opts.verbose,
-        json: opts.json,
-        onConflict: opts.onConflict,
-        appendOrder: opts.appendOrder,
-      });
+  registerSharedInstallFlags(cmd);
+
+  cmd.action(async (opts) => {
+    let remote: boolean | string | undefined;
+    if (opts.remote !== undefined) {
+      remote = opts.remote === true ? true : opts.remote;
+    }
+
+    await runInit({
+      cwd: opts.cwd,
+      platform: opts.platform,
+      skills: opts.skills,
+      remote,
+      yes: opts.yes,
+      dryRun: opts.dryRun,
+      verbose: opts.verbose,
+      json: opts.json,
+      onConflict: opts.onConflict,
+      appendOrder: opts.appendOrder,
+      noCache: opts.noCache,
     });
+  });
 }

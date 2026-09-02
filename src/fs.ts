@@ -1,6 +1,5 @@
-import { join } from "node:path";
-import { mkdir, readFile, writeFile, stat } from "node:fs/promises";
-import { dirname } from "node:path";
+import { mkdir, readFile, writeFile, stat, unlink, rmdir } from "node:fs/promises";
+import { dirname, join } from "node:path";
 
 export function projectPath(cwd: string, ...segments: string[]): string {
   return join(cwd, ...segments);
@@ -25,6 +24,19 @@ export async function writeTextFile(
 export async function pathExists(path: string): Promise<boolean> {
   try {
     await stat(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function deleteFile(filePath: string): Promise<void> {
+  await unlink(filePath);
+}
+
+export async function removeEmptyDir(dirPath: string): Promise<boolean> {
+  try {
+    await rmdir(dirPath);
     return true;
   } catch {
     return false;

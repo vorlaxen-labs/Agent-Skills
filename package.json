@@ -1,6 +1,6 @@
 {
   "name": "@vorlaxen-labs/agent-skills",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "CLI to install Vorlaxen Agent Skills into your project — Cursor, Claude Code, Copilot, or AGENTS.md",
   "license": "MIT",
   "type": "module",

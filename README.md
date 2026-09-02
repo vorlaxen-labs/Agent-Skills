@@ -98,6 +98,48 @@ npx @vorlaxen-labs/agent-skills init --on-conflict append --append-order existin
 
 After a successful install, metadata is written to `.agent-skills/manifest.json`.
 
+### Lifecycle commands
+
+**Check installation health:**
+
+```bash
+npx @vorlaxen-labs/agent-skills doctor
+npx @vorlaxen-labs/agent-skills doctor --json
+```
+
+**Update installed skills** (re-applies manifest config; default conflict strategy is replace):
+
+```bash
+npx @vorlaxen-labs/agent-skills update
+npx @vorlaxen-labs/agent-skills update --remote=main
+npx @vorlaxen-labs/agent-skills update --dry-run
+```
+
+**Preview changes** without writing:
+
+```bash
+npx @vorlaxen-labs/agent-skills diff
+npx @vorlaxen-labs/agent-skills diff --json
+```
+
+**Remove installed files:**
+
+```bash
+npx @vorlaxen-labs/agent-skills uninstall
+npx @vorlaxen-labs/agent-skills uninstall --yes
+npx @vorlaxen-labs/agent-skills uninstall --force   # remove files without watermark
+```
+
+**GitHub fetch cache** — responses are cached under `~/.cache/agent-skills/`. Bypass with `--no-cache` on `init`, `update`, or `diff`. Set `GITHUB_TOKEN` for higher GitHub API rate limits.
+
+**Shell completion:**
+
+```bash
+agent-skills completion bash >> ~/.bashrc
+agent-skills completion zsh  >> ~/.zshrc
+agent-skills completion fish >> ~/.config/fish/completions/agent-skills.fish
+```
+
 **Manual install** (alternative):
 
 ```bash
@@ -155,10 +197,12 @@ agent-skills/
 ├── AGENTS.md              # Universal — copy anywhere
 ├── package.json           # CLI: npx @vorlaxen-labs/agent-skills init
 ├── src/                   # CLI source
-│   ├── commands/          # init, list
-│   ├── install/           # plan, execute, merge, planners
-│   ├── source/            # bundled + GitHub fetch
+│   ├── commands/          # init, list, doctor, update, diff, uninstall, completion
+│   ├── install/           # plan, execute, merge, run, planners
+│   ├── source/            # bundled + GitHub fetch + cache
 │   ├── conflict/          # detect + resolve existing files
+│   ├── diff/              # unified diff helper
+│   ├── cli-options.ts     # shared install flags
 │   ├── catalog.ts         # platforms & skills
 │   ├── validate.ts
 │   ├── fs.ts, markdown.ts, output.ts, version.ts
