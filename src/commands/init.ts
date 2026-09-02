@@ -30,6 +30,7 @@ export interface InitOptions {
   onConflict?: ReturnType<typeof parseConflictStrategy>;
   appendOrder?: ReturnType<typeof parseAppendOrder>;
   noCache?: boolean;
+  conflictOverrides?: Record<string, import("../conflict/types.js").ConflictStrategy>;
 }
 
 const platformIds = PLATFORMS.map((p) => p.id).join(", ");
@@ -87,6 +88,7 @@ export async function runInit(options: InitOptions = {}): Promise<void> {
     yes: options.yes,
     yesConflictDefault: "append",
     noCache: options.noCache,
+    conflictOverrides: options.conflictOverrides,
   });
 
   printInitResult({
@@ -155,6 +157,7 @@ export function registerInitCommand(program: Command): void {
       onConflict: opts.onConflict,
       appendOrder: opts.appendOrder,
       noCache: opts.noCache,
+      conflictOverrides: opts.onConflictFor,
     });
   });
 }

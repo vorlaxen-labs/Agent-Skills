@@ -1,4 +1,5 @@
-import { pathExists } from "../fs.js";
+import { pathExists, readTextFile } from "../fs.js";
+import { stripWatermark } from "../markdown.js";
 import type { PlannedWrite } from "../install/planned.js";
 
 export async function detectConflicts(
@@ -6,9 +7,13 @@ export async function detectConflicts(
 ): Promise<string[]> {
   const conflicts: string[] = [];
   for (const write of planned) {
-    if (await pathExists(write.dest)) {
-      conflicts.push(write.dest);
-    }
+    if (!(await pathExists(write.dest))) continue;
+
+    const existing = stripWatermark(await readTextFile(write.dest));
+    const incoming = stripWatermark(write.content);
+    if (existing === incoming) continue;
+
+    conflicts.push(write.dest);
   }
   return conflicts;
 }

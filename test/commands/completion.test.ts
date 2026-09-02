@@ -7,8 +7,8 @@ describe("shell completion", () => {
     const script = bashCompletion();
     assert.match(script, /complete -F _agent_skills_completions agent-skills/);
     assert.match(script, /init/);
-    assert.match(script, /doctor/);
-    assert.match(script, /update/);
+    assert.match(script, /add/);
+    assert.match(script, /status/);
   });
 
   it("generates zsh completion", () => {

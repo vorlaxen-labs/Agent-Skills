@@ -1,26 +1,24 @@
 import { Command } from "commander";
-import { SKILLS } from "../catalog.js";
-import { pathExists, readTextFile } from "../fs.js";
+import { pathExists } from "../fs.js";
 import {
-  compareVersions,
   getManifestPath,
   ManifestError,
   readInstallManifest,
-  unknownSkillIds,
 } from "../install/manifest.js";
-import {
-  logVerbose,
-  printDoctorResult,
-  setOutputOptions,
-  type DoctorCheck,
-} from "../output.js";
-import { WATERMARK } from "../markdown.js";
-import { getPackageVersion } from "../version.js";
+import { runDoctorChecks } from "../doctor/checks.js";
+import { runDoctorFix } from "../doctor/fix.js";
+import { printDoctorResult, setOutputOptions } from "../output.js";
 
 export interface DoctorOptions {
   cwd?: string;
   verbose?: boolean;
   json?: boolean;
+  strict?: boolean;
+  fix?: boolean;
+  fixUpdate?: boolean;
+  dryRun?: boolean;
+  force?: boolean;
+  noCache?: boolean;
 }
 
 export async function runDoctor(options: DoctorOptions = {}): Promise<number> {
@@ -47,90 +45,36 @@ export async function runDoctor(options: DoctorOptions = {}): Promise<number> {
     throw err;
   }
 
-  const checks: DoctorCheck[] = [];
-  const currentVersion = getPackageVersion();
+  let checks = await runDoctorChecks({ cwd, manifest, noCache: options.noCache });
 
-  if (compareVersions(currentVersion, manifest.cliVersion) > 0) {
-    checks.push({
-      name: "cli-version",
-      status: "warn",
-      message: `Update available (${manifest.cliVersion} → ${currentVersion}). Run \`agent-skills update\`.`,
+  if (options.fix || options.fixUpdate) {
+    const fixResult = await runDoctorFix({
+      cwd,
+      manifest,
+      dryRun: options.dryRun,
+      force: options.force,
+      fixUpdate: options.fixUpdate,
+      noCache: options.noCache,
     });
-  } else {
-    checks.push({
-      name: "cli-version",
-      status: "ok",
-      message: `CLI ${currentVersion} matches or exceeds installed ${manifest.cliVersion}`,
-    });
-  }
-
-  const missingFiles: string[] = [];
-  const modifiedFiles: string[] = [];
-  for (const file of manifest.written) {
-    if (!(await pathExists(file))) {
-      missingFiles.push(file);
-      continue;
+    if (!options.json && fixResult.fixed.length > 0) {
+      const verb = options.dryRun ? "Would fix" : "Fixed";
+      console.log(`\n${verb} ${fixResult.fixed.length} file(s):\n`);
+      for (const f of fixResult.fixed) console.log(`  ✓ ${f}`);
+      console.log("");
     }
-    const content = await readTextFile(file);
-    if (!content.includes(WATERMARK)) {
-      modifiedFiles.push(file);
-    }
-  }
-
-  if (missingFiles.length === 0) {
-    checks.push({
-      name: "files",
-      status: "ok",
-      message: `All ${manifest.written.length} installed file(s) present`,
-    });
-  } else {
-    checks.push({
-      name: "files",
-      status: "error",
-      message: `${missingFiles.length} missing file(s): ${missingFiles.join(", ")}`,
-    });
-  }
-
-  if (modifiedFiles.length === 0) {
-    checks.push({
-      name: "watermark",
-      status: "ok",
-      message: "Installed files intact",
-    });
-  } else {
-    checks.push({
-      name: "watermark",
-      status: "warn",
-      message: `${modifiedFiles.length} file(s) modified locally (no watermark)`,
-    });
-  }
-
-  const unknown = unknownSkillIds(manifest.skills);
-  if (unknown.length === 0) {
-    checks.push({
-      name: "skills",
-      status: "ok",
-      message: `Skills valid: ${manifest.skills.join(", ")}`,
-    });
-  } else {
-    checks.push({
-      name: "skills",
-      status: "warn",
-      message: `Unknown skill ids in manifest: ${unknown.join(", ")}`,
-    });
-  }
-
-  for (const skillId of manifest.skills) {
-    const def = SKILLS.find((s) => s.id === skillId);
-    if (def?.npmVersion) {
-      logVerbose(`Library ${skillId} pinned at npm ${def.npmVersion}`);
+    if (!options.dryRun) {
+      manifest = await readInstallManifest(cwd);
+      checks = await runDoctorChecks({ cwd, manifest, noCache: options.noCache });
     }
   }
 
   printDoctorResult({ manifestFound: true, checks, manifestPath });
 
   const hasError = checks.some((c) => c.status === "error");
-  return hasError ? 1 : 0;
+  const hasWarn = checks.some((c) => c.status === "warn");
+  if (hasError) return 1;
+  if (options.strict && hasWarn) return 1;
+  return 0;
 }
 
 export function registerDoctorCommand(program: Command): void {
@@ -140,11 +84,23 @@ export function registerDoctorCommand(program: Command): void {
     .option("-C, --cwd <dir>", "Target project directory", process.cwd())
     .option("--verbose", "Verbose logging")
     .option("--json", "Machine-readable output")
+    .option("--strict", "Treat warnings as errors (exit 1)")
+    .option("--fix", "Repair missing or drifted files from snapshot")
+    .option("--fix-update", "Run update to refresh from upstream")
+    .option("--force", "Fix files even without watermark")
+    .option("--dry-run", "Preview fix actions")
+    .option("--no-cache", "Bypass GitHub response cache")
     .action(async (opts) => {
       const code = await runDoctor({
         cwd: opts.cwd,
         verbose: opts.verbose,
         json: opts.json,
+        strict: opts.strict,
+        fix: opts.fix,
+        fixUpdate: opts.fixUpdate,
+        dryRun: opts.dryRun,
+        force: opts.force,
+        noCache: opts.noCache,
       });
       if (code !== 0) process.exitCode = code;
     });

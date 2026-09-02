@@ -1,13 +1,8 @@
 import { confirm } from "@inquirer/prompts";
 import { Command } from "commander";
-import {
-  deleteFile,
-  pathExists,
-  readTextFile,
-  removeEmptyDir,
-} from "../fs.js";
+import { deleteFile, pathExists, removeEmptyDir } from "../fs.js";
 import { getManifestPath, readInstallManifest } from "../install/manifest.js";
-import { WATERMARK } from "../markdown.js";
+import { removePaths } from "../install/remove.js";
 import { printUninstallResult, setOutputOptions } from "../output.js";
 
 export interface UninstallOptions {
@@ -39,31 +34,10 @@ export async function runUninstall(options: UninstallOptions = {}): Promise<void
     }
   }
 
-  const removed: string[] = [];
-  const skipped: string[] = [];
-
-  for (const file of manifest.written) {
-    if (!(await pathExists(file))) {
-      skipped.push(file);
-      continue;
-    }
-
-    if (!options.force) {
-      const content = await readTextFile(file);
-      if (!content.includes(WATERMARK)) {
-        skipped.push(file);
-        continue;
-      }
-    }
-
-    if (options.dryRun) {
-      removed.push(file);
-      continue;
-    }
-
-    await deleteFile(file);
-    removed.push(file);
-  }
+  const { removed, skipped } = await removePaths(manifest.written, {
+    force: options.force,
+    dryRun: options.dryRun,
+  });
 
   if (!options.dryRun) {
     const manifestPath = getManifestPath(cwd);

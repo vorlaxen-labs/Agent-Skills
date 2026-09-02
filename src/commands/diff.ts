@@ -1,9 +1,8 @@
 import { Command } from "commander";
-import { compareContent, unifiedDiff, type FileDiff } from "../diff/unified.js";
-import { pathExists, readTextFile } from "../fs.js";
-import { readInstallManifest } from "../install/manifest.js";
+import { hasDrift } from "../install/compare-snapshot.js";
+import { comparePlannedToDisk } from "../install/compare-snapshot.js";
+import { ManifestError, readInstallManifest } from "../install/manifest.js";
 import { planFromManifest } from "../install/run.js";
-import { withWatermark, stripWatermark } from "../markdown.js";
 import { logVerbose, printDiffResult, setOutputOptions } from "../output.js";
 
 export interface DiffOptions {
@@ -11,47 +10,43 @@ export interface DiffOptions {
   verbose?: boolean;
   json?: boolean;
   noCache?: boolean;
+  /** Exit 1 when any file would change (CI-friendly) */
+  check?: boolean;
 }
 
-export async function runDiff(options: DiffOptions = {}): Promise<void> {
+export async function runDiff(options: DiffOptions = {}): Promise<number> {
   const cwd = options.cwd ?? process.cwd();
   setOutputOptions({
     verbose: options.verbose ?? false,
     json: options.json ?? false,
   });
 
-  const manifest = await readInstallManifest(cwd);
+  let manifest;
+  try {
+    manifest = await readInstallManifest(cwd);
+  } catch (err) {
+    if (err instanceof ManifestError) {
+      if (options.json) {
+        console.log(JSON.stringify({ error: err.message }, null, 2));
+      } else {
+        console.error(err.message);
+      }
+      return 1;
+    }
+    throw err;
+  }
+
   logVerbose(`Planning diff for platform ${manifest.platform}`);
 
   const { planned } = await planFromManifest(cwd, manifest, options.noCache);
-  const files: FileDiff[] = [];
-
-  for (const write of planned) {
-    const incoming = stripWatermark(withWatermark(write.content));
-    const exists = await pathExists(write.dest);
-
-    if (!exists) {
-      files.push({
-        dest: write.dest,
-        status: "create",
-        diff: unifiedDiff("/dev/null", write.dest, "", incoming),
-      });
-      continue;
-    }
-
-    const existing = stripWatermark(await readTextFile(write.dest));
-    const status = compareContent(existing, incoming);
-    files.push({
-      dest: write.dest,
-      status: status === "unchanged" ? "unchanged" : "modify",
-      diff:
-        status === "modify"
-          ? unifiedDiff(write.dest, write.dest, existing, incoming)
-          : undefined,
-    });
-  }
+  const files = await comparePlannedToDisk(planned);
 
   printDiffResult({ files });
+
+  if (options.check && hasDrift(files)) {
+    return 1;
+  }
+  return 0;
 }
 
 export function registerDiffCommand(program: Command): void {
@@ -62,12 +57,15 @@ export function registerDiffCommand(program: Command): void {
     .option("--verbose", "Verbose logging")
     .option("--json", "Machine-readable output")
     .option("--no-cache", "Bypass GitHub response cache")
+    .option("--check", "Exit 1 if any file differs from snapshot")
     .action(async (opts) => {
-      await runDiff({
+      const code = await runDiff({
         cwd: opts.cwd,
         verbose: opts.verbose,
         json: opts.json,
         noCache: opts.noCache,
+        check: opts.check,
       });
+      if (code !== 0) process.exitCode = code;
     });
 }

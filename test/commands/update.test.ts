@@ -19,6 +19,7 @@ describe("runUpdate", () => {
       platform: "agents-md",
       skills: ["global"],
       yes: true,
+      onConflict: "replace",
       json: true,
     });
 

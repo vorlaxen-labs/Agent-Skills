@@ -1,5 +1,5 @@
 import { PLATFORMS, SKILLS, type Platform } from "./catalog.js";
-import type { ConflictPolicy } from "./conflict/types.js";
+import type { ConflictPolicyV2 } from "./conflict/types.js";
 import type { InstallResult } from "./install/types.js";
 
 export interface OutputOptions {
@@ -31,7 +31,7 @@ export interface InitResultPayload {
   platform: Platform;
   platformLabel: string;
   result: InstallResult;
-  conflictPolicy: ConflictPolicy | null;
+  conflictPolicy: ConflictPolicyV2 | null;
   dryRun: boolean;
   manifestPath?: string;
 }
@@ -107,11 +107,9 @@ export function printList(): void {
   console.log("");
 }
 
-export interface DoctorCheck {
-  name: string;
-  status: "ok" | "warn" | "error";
-  message: string;
-}
+import type { DoctorCheck } from "./doctor/types.js";
+
+export type { DoctorCheck };
 
 export interface DoctorResultPayload {
   manifestFound: boolean;
@@ -132,7 +130,14 @@ export function printDoctorResult(payload: DoctorResultPayload): void {
   }
 
   for (const check of payload.checks) {
-    const icon = check.status === "ok" ? "✓" : check.status === "warn" ? "!" : "✗";
+    const icon =
+      check.status === "ok"
+        ? "✓"
+        : check.status === "warn"
+          ? "!"
+          : check.status === "info"
+            ? "·"
+            : "✗";
     console.log(`  ${icon} ${check.name}: ${check.message}`);
   }
   if (payload.manifestPath) {
@@ -184,6 +189,52 @@ export function printUninstallResult(payload: UninstallResultPayload): void {
     for (const file of payload.skipped) {
       console.log(`  ○ ${file}`);
     }
+  }
+  console.log("");
+}
+
+export interface StatusResultPayload {
+  installed: boolean;
+  platform?: string;
+  skills?: string[];
+  cliVersion?: string;
+  currentCliVersion?: string;
+  installedAt?: string;
+  doctor?: { ok: number; warn: number; error: number };
+  diff?: { unchanged: number; modify: number; create: number };
+  suggestedAction?: string | null;
+  manifestPath?: string;
+}
+
+export function printStatusResult(payload: StatusResultPayload): void {
+  if (outputOptions.json) {
+    console.log(JSON.stringify(payload, null, 2));
+    return;
+  }
+
+  if (!payload.installed) {
+    console.log("\nNo installation found — run `agent-skills init` first.\n");
+    return;
+  }
+
+  console.log("\nAgent Skills Status\n");
+  console.log(`  Platform:  ${payload.platform}`);
+  console.log(`  Skills:    ${payload.skills?.join(", ")}`);
+  console.log(`  CLI:       ${payload.cliVersion} (current: ${payload.currentCliVersion})`);
+  console.log(`  Installed: ${payload.installedAt}`);
+
+  if (payload.doctor) {
+    console.log(
+      `\n  Health:    ${payload.doctor.ok} ok, ${payload.doctor.warn} warn, ${payload.doctor.error} error`,
+    );
+  }
+  if (payload.diff) {
+    console.log(
+      `  Drift:     ${payload.diff.unchanged} unchanged, ${payload.diff.modify} modified, ${payload.diff.create} new`,
+    );
+  }
+  if (payload.suggestedAction) {
+    console.log(`\n  Suggested: ${payload.suggestedAction}`);
   }
   console.log("");
 }

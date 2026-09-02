@@ -1,25 +1,31 @@
-import type { ConflictPolicy } from "../conflict/types.js";
+import type { ConflictPolicyV2 } from "../conflict/types.js";
+import { resolveStrategyForPath } from "../conflict/path-policy.js";
 import { pathExists, readTextFile, writeTextFile } from "../fs.js";
 import { withWatermark } from "../markdown.js";
-import { mergeContent } from "./merge.js";
+import { contentAlreadyPresent, mergeContent } from "./merge.js";
 import type { InstallResult, PlannedAction, PlannedWrite } from "./types.js";
 
 export interface ExecuteOptions {
   dryRun?: boolean;
-  policy?: ConflictPolicy | null;
+  policy?: ConflictPolicyV2 | null;
+  cwd?: string;
 }
 
 export async function executePlan(
   planned: PlannedWrite[],
   options: ExecuteOptions = {},
 ): Promise<InstallResult> {
+  const cwd = options.cwd ?? process.cwd();
   const written: string[] = [];
   const skipped: string[] = [];
   const plannedActions: PlannedAction[] = [];
 
   for (const write of planned) {
     const exists = await pathExists(write.dest);
-    const action = resolveAction(exists, options.policy);
+    const strategy = exists
+      ? resolveStrategyForPath(write.dest, cwd, options.policy)
+      : "replace";
+    const action = resolveAction(exists, strategy);
     plannedActions.push({ dest: write.dest, action });
 
     if (action === "skip") {
@@ -38,6 +44,10 @@ export async function executePlan(
 
     if (exists && action === "append") {
       const existing = await readTextFile(write.dest);
+      if (contentAlreadyPresent(existing, write.content)) {
+        skipped.push(write.dest);
+        continue;
+      }
       const order = options.policy?.appendOrder ?? "vorlaxen-first";
       finalContent = mergeContent(existing, write.content, order);
     }
@@ -55,13 +65,11 @@ export async function executePlan(
 
 function resolveAction(
   exists: boolean,
-  policy: ConflictPolicy | null | undefined,
+  strategy: string,
 ): PlannedAction["action"] {
   if (!exists) {
     return "create";
   }
-
-  const strategy = policy?.strategy ?? "replace";
 
   switch (strategy) {
     case "skip":
@@ -69,6 +77,7 @@ function resolveAction(
     case "append":
       return "append";
     case "replace":
+    default:
       return "replace";
   }
 }

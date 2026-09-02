@@ -57,7 +57,7 @@ describe("runInstall", () => {
       platform: "agents-md",
       skillIds: ["global"],
       yes: true,
-      yesConflictDefault: "replace",
+      onConflict: "replace",
       showFetchMessage: false,
     });
 

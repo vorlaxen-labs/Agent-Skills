@@ -8,6 +8,9 @@ const COMMANDS = [
   "update",
   "diff",
   "uninstall",
+  "add",
+  "remove",
+  "status",
   "completion",
 ];
 

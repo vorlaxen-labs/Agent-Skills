@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { registerSharedInstallFlags } from "../cli-options.js";
+import type { ConflictStrategy } from "../conflict/types.js";
 import { readInstallManifest } from "../install/manifest.js";
 import { runInstall } from "../install/run.js";
 import {
@@ -15,9 +16,10 @@ export interface UpdateOptions {
   dryRun?: boolean;
   verbose?: boolean;
   json?: boolean;
-  onConflict?: "replace" | "append" | "skip";
+  onConflict?: ConflictStrategy;
   appendOrder?: "existing-first" | "vorlaxen-first";
   noCache?: boolean;
+  conflictOverrides?: Record<string, ConflictStrategy>;
 }
 
 export async function runUpdate(options: UpdateOptions = {}): Promise<void> {
@@ -40,9 +42,11 @@ export async function runUpdate(options: UpdateOptions = {}): Promise<void> {
     onConflict: options.onConflict,
     appendOrder: options.appendOrder,
     yes: options.yes ?? true,
-    nonInteractive: !options.onConflict && options.yes !== false,
-    yesConflictDefault: "replace",
+    nonInteractive: true,
+    manifestPolicy: manifest.conflictPolicy,
+    conflictOverrides: options.conflictOverrides,
     noCache: options.noCache,
+    showFetchMessage: false,
   });
 
   printInitResult({
@@ -83,6 +87,7 @@ export function registerUpdateCommand(program: Command): void {
       onConflict: opts.onConflict,
       appendOrder: opts.appendOrder,
       noCache: opts.noCache,
+      conflictOverrides: opts.onConflictFor,
     });
   });
 }

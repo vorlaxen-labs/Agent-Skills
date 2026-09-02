@@ -33,7 +33,7 @@ describe("executePlan", () => {
 
     const result = await executePlan(
       [{ dest, content: "# New content" }],
-      { policy: { strategy: "replace" } },
+      { policy: { default: "replace" }, cwd },
     );
 
     assert.deepEqual(result.written, [dest]);
@@ -50,7 +50,10 @@ describe("executePlan", () => {
 
     const result = await executePlan(
       [{ dest, content: "# Vorlaxen content" }],
-      { policy: { strategy: "append", appendOrder: "vorlaxen-first" } },
+      {
+        policy: { default: "append", appendOrder: "vorlaxen-first", overrides: { "AGENTS.md": "append" } },
+        cwd,
+      },
     );
 
     assert.deepEqual(result.written, [dest]);
@@ -68,7 +71,7 @@ describe("executePlan", () => {
 
     const result = await executePlan(
       [{ dest, content: "# New content" }],
-      { policy: { strategy: "skip" } },
+      { policy: { default: "skip" }, cwd },
     );
 
     assert.deepEqual(result.written, []);
@@ -85,7 +88,7 @@ describe("executePlan", () => {
 
     const result = await executePlan(
       [{ dest, content: "# New" }],
-      { dryRun: true },
+      { dryRun: true, cwd },
     );
 
     assert.deepEqual(result.written, [dest]);

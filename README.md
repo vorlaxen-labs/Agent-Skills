@@ -94,9 +94,12 @@ npx @vorlaxen-labs/agent-skills init --on-conflict skip --platform agents-md --s
 
 # Append with your content first
 npx @vorlaxen-labs/agent-skills init --on-conflict append --append-order existing-first --yes
+
+# Per-path override (repeatable)
+npx @vorlaxen-labs/agent-skills init --on-conflict append --on-conflict-for AGENTS.md=append --yes
 ```
 
-After a successful install, metadata is written to `.agent-skills/manifest.json`.
+Manifest v2 stores `writtenBySkill`, `contentHashes`, and per-path conflict overrides in `.agent-skills/manifest.json`.
 
 ### Lifecycle commands
 
@@ -105,14 +108,32 @@ After a successful install, metadata is written to `.agent-skills/manifest.json`
 ```bash
 npx @vorlaxen-labs/agent-skills doctor
 npx @vorlaxen-labs/agent-skills doctor --json
+npx @vorlaxen-labs/agent-skills doctor --fix          # restore missing/drifted files
+npx @vorlaxen-labs/agent-skills doctor --fix-update   # run update from doctor
+npx @vorlaxen-labs/agent-skills doctor --strict         # exit 1 on warnings
 ```
 
-**Update installed skills** (re-applies manifest config; default conflict strategy is replace):
+**Update installed skills** (inherits conflict policy from manifest; override with `--on-conflict`):
 
 ```bash
 npx @vorlaxen-labs/agent-skills update
 npx @vorlaxen-labs/agent-skills update --remote=main
+npx @vorlaxen-labs/agent-skills update --on-conflict inherit
 npx @vorlaxen-labs/agent-skills update --dry-run
+```
+
+**Add or remove skills** without a full re-init:
+
+```bash
+npx @vorlaxen-labs/agent-skills add web-frontend bar-js
+npx @vorlaxen-labs/agent-skills remove bar-js --yes
+```
+
+**Quick status summary:**
+
+```bash
+npx @vorlaxen-labs/agent-skills status
+npx @vorlaxen-labs/agent-skills status --json
 ```
 
 **Preview changes** without writing:
@@ -120,6 +141,7 @@ npx @vorlaxen-labs/agent-skills update --dry-run
 ```bash
 npx @vorlaxen-labs/agent-skills diff
 npx @vorlaxen-labs/agent-skills diff --json
+npx @vorlaxen-labs/agent-skills diff --check   # exit 1 if any drift (CI-friendly)
 ```
 
 **Remove installed files:**
@@ -130,6 +152,12 @@ npx @vorlaxen-labs/agent-skills uninstall --yes
 npx @vorlaxen-labs/agent-skills uninstall --force   # remove files without watermark
 ```
 
+# Per-path override (repeatable)
+npx @vorlaxen-labs/agent-skills init --on-conflict append --on-conflict-for AGENTS.md=append --yes
+```
+
+Manifest v2 stores `writtenBySkill`, `contentHashes`, and per-path conflict overrides in `.agent-skills/manifest.json`.
+
 **GitHub fetch cache** — responses are cached under `~/.cache/agent-skills/`. Bypass with `--no-cache` on `init`, `update`, or `diff`. Set `GITHUB_TOKEN` for higher GitHub API rate limits.
 
 **Shell completion:**
@@ -139,6 +167,17 @@ agent-skills completion bash >> ~/.bashrc
 agent-skills completion zsh  >> ~/.zshrc
 agent-skills completion fish >> ~/.config/fish/completions/agent-skills.fish
 ```
+
+### Release (maintainers)
+
+Publish to npm via GitHub tag (requires `NPM_TOKEN` repo secret):
+
+```bash
+git tag v1.3.0
+git push origin v1.3.0
+```
+
+CI runs checks + tests, then `npm publish` and creates a GitHub Release.
 
 **Manual install** (alternative):
 
@@ -197,10 +236,11 @@ agent-skills/
 ├── AGENTS.md              # Universal — copy anywhere
 ├── package.json           # CLI: npx @vorlaxen-labs/agent-skills init
 ├── src/                   # CLI source
-│   ├── commands/          # init, list, doctor, update, diff, uninstall, completion
-│   ├── install/           # plan, execute, merge, run, planners
+│   ├── commands/          # init, list, doctor, update, diff, uninstall, add, remove, status, completion
+│   ├── install/           # plan, execute, merge, run, manifest v2, skill-paths
+│   ├── doctor/            # health checks, npm drift, fix
 │   ├── source/            # bundled + GitHub fetch + cache
-│   ├── conflict/          # detect + resolve existing files
+│   ├── conflict/          # detect + resolve + per-path policy
 │   ├── diff/              # unified diff helper
 │   ├── cli-options.ts     # shared install flags
 │   ├── catalog.ts         # platforms & skills
