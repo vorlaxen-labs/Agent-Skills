@@ -11,6 +11,7 @@ const COMMANDS = [
   "add",
   "remove",
   "status",
+  "telemetry",
   "completion",
 ];
 
@@ -63,6 +64,8 @@ _agent_skills_completions() {
       ;;
     completion)
       COMPREPLY=( $(compgen -W "bash zsh fish" -- "\${cur}") );;
+    telemetry)
+      COMPREPLY=( $(compgen -W "status yes no" -- "\${cur}") );;
   esac
 }
 complete -F _agent_skills_completions agent-skills
@@ -98,6 +101,9 @@ _agent_skills() {
         completion)
           _arguments '1:shell:($shells)'
           ;;
+        telemetry)
+          _arguments '1:action:(status yes no)'
+          ;;
       esac
       ;;
   esac
@@ -116,5 +122,6 @@ complete -c agent-skills -n "__fish_seen_subcommand_from init" -s s -l skills -a
 complete -c agent-skills -n "__fish_seen_subcommand_from init" -l on-conflict -a "replace append skip"
 complete -c agent-skills -n "__fish_seen_subcommand_from init" -l append-order -a "existing-first vorlaxen-first"
 complete -c agent-skills -n "__fish_seen_subcommand_from completion" -a "bash zsh fish"
+complete -c agent-skills -n "__fish_seen_subcommand_from telemetry" -a "status yes no"
 `;
 }

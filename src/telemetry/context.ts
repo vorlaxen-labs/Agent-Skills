@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { arch, platform } from "node:os";
 import { randomUUID } from "node:crypto";
+import { readTelemetryConfig } from "./config.js";
 import { getPackageVersion } from "../version.js";
 import type {
   TelemetryCliContext,
@@ -12,16 +13,31 @@ import type {
 const CLI_NAME = "agent-skills";
 
 let sessionId: string | undefined;
+let sessionIdFromConfig: string | undefined;
 
 export function getSessionId(): string {
-  if (sessionId === undefined) {
-    sessionId = randomUUID();
+  if (sessionId !== undefined) {
+    return sessionId;
   }
+  if (sessionIdFromConfig !== undefined) {
+    sessionId = sessionIdFromConfig;
+    return sessionId;
+  }
+  sessionId = randomUUID();
   return sessionId;
+}
+
+export async function loadSessionIdFromConfig(): Promise<void> {
+  const config = await readTelemetryConfig();
+  sessionIdFromConfig = config.anonymousId;
+  if (sessionId === undefined) {
+    sessionId = config.anonymousId;
+  }
 }
 
 export function resetSessionIdForTests(): void {
   sessionId = undefined;
+  sessionIdFromConfig = undefined;
 }
 
 export function getNodeMajorVersion(version = process.version): string {

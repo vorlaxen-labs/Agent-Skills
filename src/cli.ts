@@ -8,6 +8,7 @@ import { registerInitCommand } from "./commands/init.js";
 import { registerListCommand } from "./commands/list.js";
 import { registerRemoveCommand } from "./commands/remove.js";
 import { registerStatusCommand } from "./commands/status.js";
+import { registerTelemetryCommand } from "./commands/telemetry.js";
 import { registerUninstallCommand } from "./commands/uninstall.js";
 import { registerUpdateCommand } from "./commands/update.js";
 import { trackCommand } from "./telemetry/track.js";
@@ -31,6 +32,7 @@ registerUninstallCommand(program);
 registerAddCommand(program);
 registerRemoveCommand(program);
 registerStatusCommand(program);
+registerTelemetryCommand(program);
 registerCompletionCommand(program);
 
 program.hook("preAction", () => {
@@ -38,8 +40,12 @@ program.hook("preAction", () => {
 });
 
 program.hook("postAction", (_thisCommand, actionCommand) => {
+  if (actionCommand.name() === "telemetry") {
+    return;
+  }
+
   const globals = actionCommand.optsWithGlobals() as { noTelemetry?: boolean };
-  trackCommand({
+  void trackCommand({
     command: actionCommand.name(),
     durationMs: Date.now() - commandStartedAt,
     exitCode: typeof process.exitCode === "number" ? process.exitCode : 0,

@@ -1,20 +1,38 @@
-import { buildTelemetryContext } from "./context.js";
+import { buildTelemetryContext, loadSessionIdFromConfig } from "./context.js";
+import { readTelemetryConfig } from "./config.js";
 import { sendTelemetryEvent } from "./client.js";
 import type { CommandCompletedProperties, TelemetryEvent } from "./types.js";
 
 const INSTALL_COMMANDS = new Set(["init", "add", "remove", "update"]);
 
-export function isTelemetryEnabled(noTelemetryFlag = false): boolean {
+function envTelemetryOverride(): boolean | undefined {
+  const env = process.env.VORLAXEN_TELEMETRY?.trim().toLowerCase();
+  if (env === undefined || env.length === 0) {
+    return undefined;
+  }
+  if (env === "0" || env === "false" || env === "no") {
+    return false;
+  }
+  if (env === "1" || env === "true" || env === "yes") {
+    return true;
+  }
+  return undefined;
+}
+
+export async function resolveTelemetryEnabled(
+  noTelemetryFlag = false,
+): Promise<boolean> {
   if (noTelemetryFlag) {
     return false;
   }
 
-  const env = process.env.VORLAXEN_TELEMETRY?.trim().toLowerCase();
-  if (env === "0" || env === "false" || env === "no") {
-    return false;
+  const envOverride = envTelemetryOverride();
+  if (envOverride !== undefined) {
+    return envOverride;
   }
 
-  return true;
+  const config = await readTelemetryConfig();
+  return config.enabled;
 }
 
 export function extractCommandProperties(
@@ -45,14 +63,16 @@ export function extractCommandProperties(
   return properties;
 }
 
-export function trackEvent(
+export async function trackEvent(
   event: string,
   properties: Record<string, unknown>,
   options: { noTelemetry?: boolean } = {},
-): void {
-  if (!isTelemetryEnabled(options.noTelemetry)) {
+): Promise<void> {
+  if (!(await resolveTelemetryEnabled(options.noTelemetry))) {
     return;
   }
+
+  await loadSessionIdFromConfig();
 
   const payload: TelemetryEvent = {
     event,
@@ -63,15 +83,15 @@ export function trackEvent(
   void sendTelemetryEvent(payload);
 }
 
-export function trackCommand(options: {
+export async function trackCommand(options: {
   command: string;
   durationMs: number;
   exitCode: number;
   noTelemetry?: boolean;
   commandOpts?: Record<string, unknown>;
   args?: string[];
-}): void {
-  if (!isTelemetryEnabled(options.noTelemetry)) {
+}): Promise<void> {
+  if (!(await resolveTelemetryEnabled(options.noTelemetry))) {
     return;
   }
 
@@ -91,7 +111,7 @@ export function trackCommand(options: {
     ...(extra as Partial<CommandCompletedProperties>),
   };
 
-  trackEvent("cli.command.completed", { ...properties }, {
+  await trackEvent("cli.command.completed", { ...properties }, {
     noTelemetry: options.noTelemetry,
   });
 }
