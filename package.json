@@ -14,7 +14,12 @@
   "scripts": {
     "build": "node scripts/bundle-skills.mjs && tsc",
     "dev": "tsx src/cli.ts",
-    "prepublishOnly": "npm run build"
+    "test": "npm run build && tsx --test test/**/*.test.ts",
+    "check:sync": "node scripts/check-sync.mjs",
+    "check:libraries": "node scripts/check-library-versions.mjs",
+    "check": "npm run check:sync && npm run check:libraries",
+    "ci": "npm run check && npm test",
+    "prepublishOnly": "npm run build && npm run ci"
   },
   "engines": {
     "node": ">=18"
@@ -36,7 +41,7 @@
     "commander": "^13.1.0"
   },
   "devDependencies": {
-    "@types/node": "^22.15.0",
+    "@types/node": "^22.20.1",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3"
   }

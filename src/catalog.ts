@@ -1,3 +1,5 @@
+import libraryManifest from "../skills/libraries/manifest.json" with { type: "json" };
+
 export type Platform = "agents-md" | "cursor" | "claude-code" | "copilot";
 
 export type SkillCategory = "standard" | "domain" | "library";
@@ -13,6 +15,10 @@ export interface SkillDefinition {
   /** Claude Code rule filename (without path) */
   claudeRuleName: string;
   defaultSelected: boolean;
+  /** Library skills only — pinned npm package */
+  npmPackage?: string;
+  /** Library skills only — docs verified against this version */
+  npmVersion?: string;
 }
 
 export const PLATFORMS: { id: Platform; label: string }[] = [
@@ -58,6 +64,8 @@ export const SKILLS: SkillDefinition[] = [
     cursorSkillName: "bar-js",
     claudeRuleName: "bar-js.md",
     defaultSelected: false,
+    npmPackage: libraryManifest.libraries["bar-js"].npmPackage,
+    npmVersion: libraryManifest.libraries["bar-js"].npmVersion,
   },
   {
     id: "huk-js",
@@ -67,6 +75,8 @@ export const SKILLS: SkillDefinition[] = [
     cursorSkillName: "huk-js",
     claudeRuleName: "huk-js.md",
     defaultSelected: false,
+    npmPackage: libraryManifest.libraries["huk-js"].npmPackage,
+    npmVersion: libraryManifest.libraries["huk-js"].npmVersion,
   },
   {
     id: "kargomucuz-sdk",
@@ -76,6 +86,8 @@ export const SKILLS: SkillDefinition[] = [
     cursorSkillName: "kargomucuz-sdk",
     claudeRuleName: "kargomucuz-sdk.md",
     defaultSelected: false,
+    npmPackage: libraryManifest.libraries["kargomucuz-sdk"].npmPackage,
+    npmVersion: libraryManifest.libraries["kargomucuz-sdk"].npmVersion,
   },
 ];
 

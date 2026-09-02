@@ -59,13 +59,13 @@ export function createBundledSource(bundledRoot: string): SkillSource {
 export function createGitHubSource(
   owner = GITHUB.owner,
   repo = GITHUB.repo,
-  branch = GITHUB.branch,
+  ref: string = GITHUB.branch,
 ): SkillSource {
   return {
     async fetch(paths: string[]): Promise<RemoteFile[]> {
       const files: RemoteFile[] = [];
       for (const relPath of paths) {
-        await fetchPath(owner, repo, branch, relPath, files);
+        await fetchPath(owner, repo, ref, relPath, files);
       }
       return files;
     },
@@ -75,11 +75,11 @@ export function createGitHubSource(
 async function fetchPath(
   owner: string,
   repo: string,
-  branch: string,
+  ref: string,
   relPath: string,
   files: RemoteFile[],
 ): Promise<void> {
-  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${relPath}?ref=${branch}`;
+  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${relPath}?ref=${ref}`;
   const res = await fetch(url, {
     headers: {
       Accept: "application/vnd.github+json",
@@ -101,29 +101,29 @@ async function fetchPath(
   if (Array.isArray(data)) {
     for (const item of data) {
       if (item.type === "file") {
-        await fetchFileRaw(owner, repo, branch, item.path, files);
+        await fetchFileRaw(owner, repo, ref, item.path, files);
       } else if (item.type === "dir") {
-        await fetchPath(owner, repo, branch, item.path, files);
+        await fetchPath(owner, repo, ref, item.path, files);
       }
     }
     return;
   }
 
   if (data.type === "file") {
-    await fetchFileRaw(owner, repo, branch, data.path, files);
+    await fetchFileRaw(owner, repo, ref, data.path, files);
   } else if (data.type === "dir") {
-    await fetchPath(owner, repo, branch, data.path, files);
+    await fetchPath(owner, repo, ref, data.path, files);
   }
 }
 
 async function fetchFileRaw(
   owner: string,
   repo: string,
-  branch: string,
+  ref: string,
   relPath: string,
   files: RemoteFile[],
 ): Promise<void> {
-  const url = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${relPath}`;
+  const url = `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${relPath}`;
   const res = await fetch(url, {
     headers: { "User-Agent": "vorlaxen-agent-skills-cli" },
   });

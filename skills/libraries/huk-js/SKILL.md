@@ -1,5 +1,7 @@
 ---
 name: huk-js
+npmPackage: "@vorlaxen-labs/huk-js"
+npmVersion: "1.1.2"
 description: >-
   Zero-dependency TypeScript utility library (@vorlaxen-labs/huk-js). Nine modules:
   string, number, date, array, object, is, fn, crypto, storage. Tree-shakeable,
@@ -8,7 +10,7 @@ description: >-
 ---
 # HuK (Helper Utility Kit)
 
-**Package:** `@vorlaxen-labs/huk-js` v1.0.0 · **Zero runtime deps** · **Tree-shakeable**
+**Package:** `@vorlaxen-labs/huk-js` v1.1.2 · **Zero runtime deps** · **Tree-shakeable**
 
 Nine focused utility namespaces replacing scattered `utils/` folders with a single, type-safe API.
 

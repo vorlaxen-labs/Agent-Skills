@@ -22,7 +22,9 @@ Domain-specific modules (`web-frontend`, `web-backend`, library skills):
 | `skills/libraries/*/SKILL.md` | Library Cursor skills |
 | `skills/libraries/*/reference/` | Full API documentation per package |
 
-When editing global content, update **all three** global files. When editing a library skill, update `SKILL.md` and the relevant `reference/` files together.
+When editing global content, update **all three** global files. When editing a library skill, update `SKILL.md`, `skills/libraries/manifest.json`, and the relevant `reference/` files together.
+
+CI runs `npm run check` — global sync (`AGENTS.md` ↔ `skills/global/SKILL.md` ↔ `rules/global.mdc` from `# Core Principle`) and library npm version binding.
 
 ## Adding a New Module
 
@@ -46,6 +48,7 @@ description: >-
 2. Add verified documentation under `skills/libraries/<package-name>/reference/`.
 3. Cross-check all API claims against the actual package source before merging.
 4. Update `README.md` library table.
+5. Pin the verified npm version in `skills/libraries/manifest.json` and `SKILL.md` frontmatter (`npmPackage`, `npmVersion`) — CI checks all three match and exist on npm.
 
 ## Content Guidelines
 

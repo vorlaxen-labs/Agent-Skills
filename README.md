@@ -54,6 +54,18 @@ Interactive setup — pick your platform (AGENTS.md, Cursor, Claude Code, Copilo
 npx @vorlaxen-labs/agent-skills init --platform cursor --skills global,web-frontend,bar-js
 ```
 
+**Remote source** (optional — default uses the bundled snapshot shipped with your CLI version):
+
+```bash
+# Same version tag as the installed CLI (e.g. v1.0.0)
+npx @vorlaxen-labs/agent-skills init --remote
+
+# Bleeding-edge from main
+npx @vorlaxen-labs/agent-skills init --remote=main
+```
+
+Invalid `--platform` or `--skills` values are rejected with a list of available options.
+
 **Manual install** (alternative):
 
 ```bash

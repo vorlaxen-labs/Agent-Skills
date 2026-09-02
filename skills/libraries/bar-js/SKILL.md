@@ -1,5 +1,7 @@
 ---
 name: bar-js
+npmPackage: "@vorlaxen-labs/bar-js"
+npmVersion: "2.0.0"
 description: >-
   Framework-agnostic TypeScript API response builder (@vorlaxen-labs/bar-js).
   Standardizes JSON envelopes with semantic presets, request tracing, pagination,

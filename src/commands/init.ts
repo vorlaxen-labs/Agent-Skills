@@ -1,5 +1,4 @@
 import { checkbox, select } from "@inquirer/prompts";
-import { statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -13,35 +12,32 @@ import {
   installClaudeCode,
   installCopilot,
   installCursor,
+  type InstallContext,
+  type InstallResult,
 } from "../install/index.js";
-import {
-  createBundledSource,
-  createGitHubSource,
-  type SkillSource,
-} from "../source/index.js";
+import { resolveSource, type RemoteRef } from "../source/resolve.js";
+import { getPackageVersion } from "../version.js";
+import { parsePlatform, parseSkillIds } from "../validate.js";
 
 export interface InitOptions {
   cwd?: string;
-  platform?: Platform;
+  platform?: string;
   skills?: string[];
-  remote?: boolean;
+  remote?: RemoteRef;
   yes?: boolean;
 }
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-function resolveSource(remote: boolean): SkillSource {
-  if (remote) {
-    return createGitHubSource();
-  }
-  const bundledRoot = join(__dirname, "..", "..", "bundled");
-  try {
-    statSync(bundledRoot);
-    return createBundledSource(bundledRoot);
-  } catch {
-    return createGitHubSource();
-  }
-}
+const INSTALLERS: Record<
+  Platform,
+  (ctx: InstallContext) => Promise<InstallResult>
+> = {
+  "agents-md": installAgentsMd,
+  cursor: installCursor,
+  "claude-code": installClaudeCode,
+  copilot: installCopilot,
+};
 
 function collectPaths(skillIds: string[]): string[] {
   const set = new Set<string>();
@@ -61,21 +57,22 @@ function selectedSkillDefs(skillIds: string[]): SkillDefinition[] {
 
 export async function runInit(options: InitOptions = {}): Promise<void> {
   const cwd = options.cwd ?? process.cwd();
+  const packageVersion = getPackageVersion();
 
-  const platform: Platform =
-    options.platform ??
-    (options.yes
+  const platform: Platform = options.platform
+    ? parsePlatform(options.platform)
+    : options.yes
       ? "agents-md"
       : await select<Platform>({
           message: "Platform",
           choices: PLATFORMS.map((p) => ({ name: p.label, value: p.id })),
           default: "agents-md",
-        }));
+        });
 
   const defaultIds = SKILLS.filter((s) => s.defaultSelected).map((s) => s.id);
-  const skillIds =
-    options.skills ??
-    (options.yes
+  const skillIds: string[] = options.skills
+    ? parseSkillIds(options.skills)
+    : options.yes
       ? defaultIds
       : await checkbox<string>({
           message: "Skills",
@@ -84,12 +81,10 @@ export async function runInit(options: InitOptions = {}): Promise<void> {
             value: s.id,
             checked: s.defaultSelected,
           })),
-        }));
+        });
 
   if (skillIds.length === 0) {
-    console.error("No skills selected. Aborting.");
-    process.exitCode = 1;
-    return;
+    throw new Error("No skills selected. Aborting.");
   }
 
   if (!skillIds.includes("global")) {
@@ -99,30 +94,19 @@ export async function runInit(options: InitOptions = {}): Promise<void> {
   }
 
   const paths = collectPaths(skillIds);
-  const source = resolveSource(options.remote ?? false);
+  const bundledRoot = join(__dirname, "..", "..", "bundled");
+  const source = resolveSource(options.remote, packageVersion, bundledRoot);
 
   console.log("\nFetching selected skills…");
   const files = await source.fetch(paths);
   const skills = selectedSkillDefs(skillIds);
-  const ctx = { cwd, skills, files };
+  const ctx: InstallContext = { cwd, skills, files };
 
-  let result;
-  switch (platform) {
-    case "agents-md":
-      result = await installAgentsMd(ctx);
-      break;
-    case "cursor":
-      result = await installCursor(ctx);
-      break;
-    case "claude-code":
-      result = await installClaudeCode(ctx);
-      break;
-    case "copilot":
-      result = await installCopilot(ctx);
-      break;
-  }
+  const result = await INSTALLERS[platform](ctx);
 
-  console.log(`\nInstalled ${result.written.length} file(s) for ${PLATFORMS.find((p) => p.id === platform)?.label}:\n`);
+  console.log(
+    `\nInstalled ${result.written.length} file(s) for ${PLATFORMS.find((p) => p.id === platform)?.label}:\n`,
+  );
   for (const file of result.written) {
     console.log(`  ✓ ${file}`);
   }

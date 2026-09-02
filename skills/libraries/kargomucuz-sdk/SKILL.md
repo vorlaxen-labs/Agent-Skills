@@ -1,5 +1,7 @@
 ---
 name: kargomucuz-sdk
+npmPackage: "@vorlaxen-labs/kargomucuz-sdk"
+npmVersion: "1.0.5"
 description: >-
   Official TypeScript SDK for Kargomucuz cargo API (@vorlaxen-labs/kargomucuz-sdk).
   Covers addresses, rates, shipments, tracking, multi-carrier logistics, and error
