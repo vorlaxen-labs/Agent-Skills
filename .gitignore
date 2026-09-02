@@ -32,5 +32,6 @@ venv/
 
 # Build artifacts
 dist/
+bundled/
 build/
 *.tsbuildinfo

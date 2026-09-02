@@ -17,7 +17,7 @@ They do not prescribe components, hooks, state libraries, or styling approaches.
 # Hard Rules — Read First
 
 1. **Never hallucinate.** Do not invent components, hooks, routes, props, endpoints, or styling tokens. Read the codebase first.
-2. **If uncertain, stop and ask.** Do not guess names, state shape, or API responses.
+2. **Match risk to action.** Stop and ask for API contracts, state shape, or auth — not for UI placement when the project already has a pattern. Read first, then proceed or ask.
 3. **Do not change the project's frontend stack** unless the user explicitly asks.
 4. **These rules constrain decisions only.** Implementation style comes from the existing codebase.
 

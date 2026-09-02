@@ -1,273 +1,130 @@
 # Vorlaxen Agent Skills
 
-Production-grade AI agent instructions written from a senior engineer's perspective.
+**Decision boundaries for AI coding agents** — what they may decide, what they must not, and when to stop and ask.
 
-**Core principle: Constrain decisions, not implementations.**
-
-These prompts define what an agent **may decide**, **must not decide alone**, and **when to stop and ask**. They do not prescribe how to write code — the existing codebase does that.
-
-Works with **Cursor, Claude Code, GitHub Copilot, Windsurf, OpenAI Codex, Gemini CLI**, and any tool that accepts custom instructions.
-
-**Organization:** [vorlaxen-labs](https://github.com/vorlaxen-labs) · **Author:** [Vorlaxen](https://github.com/Vorlaxen) (Hakan K.)
-
-All npm packages (`@vorlaxen-labs/*`) and this repository live under the [vorlaxen-labs](https://github.com/vorlaxen-labs) GitHub organization.
+Works with Cursor, Claude Code, Copilot, Windsurf, Codex, Gemini CLI, and any tool that reads custom instructions.
 
 ---
 
-## Philosophy
+## What is this?
 
-### Constrain decisions, not implementations
+This repo serves **two purposes**. Pick what you need:
 
-| Constrain (these prompts) | Do not constrain (the project decides) |
-|---------------------------|----------------------------------------|
-| When to stop and ask | Which framework or library to use |
-| What requires user approval | Folder structure and naming |
-| What you may not invent | Code patterns and syntax style |
-| Required outcomes (readable, production-safe) | How to achieve those outcomes |
-| Scope boundaries | Implementation details |
+| | **Engineering standards** | **Vorlaxen library skills** |
+|---|---|---|
+| **For** | Any team, any stack | Teams using [@vorlaxen-labs](https://github.com/vorlaxen-labs) npm packages |
+| **What** | Rules that stop agents from hallucinating, over-scoping, or asking permission for every pixel | Verified API docs so agents use `bar-js`, `huk-js`, `kargomucuz-sdk` correctly |
+| **Start here** | [`AGENTS.md`](AGENTS.md) | [`skills/libraries/`](skills/libraries/) |
 
-### Hard boundaries on every module
+**Not Vorlaxen-specific?** Copy `AGENTS.md` and ignore the library folder.  
+**Using Vorlaxen packages?** Add the matching library skill on top of the global standards.
 
-1. **Never hallucinate** — unseen = nonexistent
-2. **Stop and ask** — uncertain = do not proceed
+Maintained by [Vorlaxen Labs](https://github.com/vorlaxen-labs) as both our internal agent config and an open community standard. Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+---
+
+## Core idea
+
+**Constrain decisions, not implementations.**
+
+These rules tell an agent *what it may decide* — not *how to write code*. Stack, patterns, and folder structure come from your project.
+
+Four hard boundaries:
+
+1. **Never hallucinate** — if it's not in the codebase, it doesn't exist
+2. **Match risk to action** — ask for API contracts, schema, security; proceed when the pattern is already in the code
 3. **Scope control** — no silent refactors or infrastructure changes
-4. **Follow the project** — conventions beat agent preference
+4. **Follow the project** — your conventions beat agent preference
+
+Full rules: [`AGENTS.md`](AGENTS.md)
 
 ---
 
-## Available Instructions
-
-| Module | File | Scope |
-|--------|------|-------|
-| **Global** | `AGENTS.md` / `prompts/global.md` | Every project, every language |
-| **Web Frontend** | `prompts/web-frontend.md` | UI, components, forms, accessibility |
-| **Web Backend** | `prompts/web-backend.md` | APIs, services, database, auth |
-
-### Library Skills
-
-Domain knowledge for [@vorlaxen-labs](https://github.com/vorlaxen-labs) npm packages — full API reference included.
-
-| Library | npm Package | Skill | Scope |
-|---------|-------------|-------|-------|
-| **kargomucuz-sdk** | `@vorlaxen-labs/kargomucuz-sdk` | `skills/libraries/kargomucuz-sdk/` | Kargomucuz cargo API — addresses, rates, shipments, tracking |
-| **bar-js** | `@vorlaxen-labs/bar-js` | `skills/libraries/bar-js/` | API response builder — envelopes, presets, tracing, pagination |
-| **huk-js** | `@vorlaxen-labs/huk-js` | `skills/libraries/huk-js/` | TypeScript utilities — string, number, date, array, object, crypto |
-
-Each skill includes a concise `SKILL.md` entry point and a `reference/` folder with the complete documentation from [docs-client](https://github.com/vorlaxen-labs/docs-client).
-
-### Install Library Skills
+## Quick start
 
 ```bash
-cp -r skills/libraries/kargomucuz-sdk ~/.cursor/skills/kargomucuz-sdk
-cp -r skills/libraries/bar-js ~/.cursor/skills/bar-js
-cp -r skills/libraries/huk-js ~/.cursor/skills/huk-js
+npx @vorlaxen-labs/agent-skills init
 ```
 
-Agents should read `reference/api-reference.md` inside the skill folder before inventing types or method signatures.
+Interactive setup — pick your platform (AGENTS.md, Cursor, Claude Code, Copilot) and the skills you need. Only selected files are fetched; no full repo clone.
 
----
+**Non-interactive example:**
 
-## Quick Install (Universal)
+```bash
+npx @vorlaxen-labs/agent-skills init --platform cursor --skills global,web-frontend,bar-js
+```
 
-Copy `AGENTS.md` to your project root. Most AI coding tools read it automatically:
+**Manual install** (alternative):
 
 ```bash
 git clone https://github.com/vorlaxen-labs/agent-skills.git
 cp agent-skills/AGENTS.md /path/to/your-project/
 ```
 
-Supported natively or via CLI by: Claude Code, Cursor, GitHub Copilot, Windsurf, Codex, Gemini CLI, Aider, Zed, and others following the [AGENTS.md](https://agents.md/) open standard.
+That's it for most tools. [`AGENTS.md`](AGENTS.md) follows the [open AGENTS.md standard](https://agents.md/) — Claude Code, Cursor, Copilot, and others pick it up from the project root.
+
+**Cursor users** — for always-on rules and on-demand skills:
+
+```bash
+cp agent-skills/rules/global.mdc ~/.cursor/rules/
+cp -r agent-skills/skills/global ~/.cursor/skills/
+# optional: cp -r agent-skills/skills/web/* ~/.cursor/skills/
+# optional: cp -r agent-skills/skills/libraries/* ~/.cursor/skills/
+```
+
+**Claude Code** — `cp AGENTS.md ~/.claude/CLAUDE.md` or into your project as `CLAUDE.md`.
+
+For other tools, paste `AGENTS.md` into custom instructions. Append a skill's body (skip YAML frontmatter) when you need web or library modules.
 
 ---
 
-## Platform Setup
+## What's included
 
-### Claude Code
+### Engineering standards (universal)
 
-**Global (all projects):**
+| Module | File | When to use |
+|--------|------|-------------|
+| Global | [`AGENTS.md`](AGENTS.md) | Every project |
+| Web frontend | [`skills/web/frontend/SKILL.md`](skills/web/frontend/SKILL.md) | UI, components, forms |
+| Web backend | [`skills/web/backend/SKILL.md`](skills/web/backend/SKILL.md) | APIs, services, auth, DB |
 
-```bash
-cp prompts/global.md ~/.claude/CLAUDE.md
-```
+Same global content also lives at [`skills/global/SKILL.md`](skills/global/SKILL.md) (Cursor skill) and [`rules/global.mdc`](rules/global.mdc) (Cursor always-on rule). Keep all three in sync when editing.
 
-**Project (team-shared):**
+### Vorlaxen library skills (optional)
 
-```bash
-cp AGENTS.md /path/to/your-project/CLAUDE.md
-# or
-cp AGENTS.md /path/to/your-project/.claude/CLAUDE.md
+For [@vorlaxen-labs](https://github.com/vorlaxen-labs) packages — verified against source, not guessed from npm names.
 
-# Domain-specific rules (loaded when matching files are touched)
-cp -r .claude/rules /path/to/your-project/.claude/
-```
+| Package | Skill |
+|---------|-------|
+| `@vorlaxen-labs/kargomucuz-sdk` | [`skills/libraries/kargomucuz-sdk/`](skills/libraries/kargomucuz-sdk/) |
+| `@vorlaxen-labs/bar-js` | [`skills/libraries/bar-js/`](skills/libraries/bar-js/) |
+| `@vorlaxen-labs/huk-js` | [`skills/libraries/huk-js/`](skills/libraries/huk-js/) |
 
-Verify with `/memory` or `/context` in a Claude Code session.
-
-### Claude.ai (Projects)
-
-1. Create a Project in Claude.ai
-2. Open **Project Settings → Custom Instructions**
-3. Paste the contents of `prompts/global.md`
-4. Add `prompts/web-frontend.md` or `prompts/web-backend.md` when working on web code
-
-### Cursor
-
-**Always-on rule:**
-
-```bash
-mkdir -p ~/.cursor/rules
-cp rules/global.mdc ~/.cursor/rules/
-```
-
-**On-demand skills:**
-
-```bash
-cp -r skills/global ~/.cursor/skills/
-cp -r skills/web/frontend ~/.cursor/skills/web-frontend
-cp -r skills/web/backend ~/.cursor/skills/web-backend
-
-# Library skills (Vorlaxen npm packages)
-cp -r skills/libraries/kargomucuz-sdk ~/.cursor/skills/kargomucuz-sdk
-cp -r skills/libraries/bar-js ~/.cursor/skills/bar-js
-cp -r skills/libraries/huk-js ~/.cursor/skills/huk-js
-```
-
-Cursor also reads `AGENTS.md` at the project root as a simpler alternative.
-
-### GitHub Copilot
-
-**Shared team standards (recommended):**
-
-```bash
-cp AGENTS.md /path/to/your-project/
-```
-
-**Copilot-editor specific** (optional, Copilot-only):
-
-```bash
-mkdir -p /path/to/your-project/.github
-cp AGENTS.md /path/to/your-project/.github/copilot-instructions.md
-```
-
-Put shared rules in `AGENTS.md`. Reserve `copilot-instructions.md` for Copilot-editor-specific behavior only.
-
-### Windsurf
-
-**Universal:**
-
-```bash
-cp AGENTS.md /path/to/your-project/
-```
-
-**Windsurf-specific rules** (optional):
-
-```bash
-mkdir -p /path/to/your-project/.windsurf/rules
-cp prompts/global.md /path/to/your-project/.windsurf/rules/global.md
-cp prompts/web-frontend.md /path/to/your-project/.windsurf/rules/web-frontend.md
-cp prompts/web-backend.md /path/to/your-project/.windsurf/rules/web-backend.md
-```
-
-### OpenAI Codex / ChatGPT / Other
-
-Copy `prompts/global.md` into:
-
-- **Codex:** `~/.codex/AGENTS.md` (global) or project-root `AGENTS.md`
-- **ChatGPT:** Custom Instructions in Settings
-- **Any API integration:** System prompt field
-
-For domain-specific work, append or separately inject `prompts/web-frontend.md` or `prompts/web-backend.md`.
+Each has a `SKILL.md` entry point and a `reference/` folder with full API docs.
 
 ---
 
-## Monorepo / Nested Projects
-
-Place domain instructions closer to the code they govern:
-
-```
-your-monorepo/
-├── AGENTS.md                          # Global standards (from this repo)
-├── packages/
-│   ├── web/
-│   │   ├── AGENTS.md                  # prompts/web-frontend.md content
-│   │   └── ...
-│   └── api/
-│       ├── AGENTS.md                  # prompts/web-backend.md content
-│       └── ...
-```
-
-Agents read the nearest `AGENTS.md` in the directory tree — closest file wins.
-
----
-
-## Repository Structure
+## Repo layout
 
 ```
 agent-skills/
-├── AGENTS.md                          # Universal — copy to any project root
-├── prompts/
-│   ├── global.md                      # Plain markdown, tool-agnostic
-│   ├── web-frontend.md
-│   └── web-backend.md
-├── skills/                            # Cursor skills (on-demand)
-│   ├── global/SKILL.md
-│   ├── libraries/                     # Vorlaxen npm package skills
-│   │   ├── kargomucuz-sdk/
-│   │   │   ├── SKILL.md
-│   │   │   └── reference/
-│   │   ├── bar-js/
-│   │   │   ├── SKILL.md
-│   │   │   └── reference/
-│   │   └── huk-js/
-│   │       ├── SKILL.md
-│   │       └── reference/
-│   └── web/
-│       ├── frontend/SKILL.md
-│       └── backend/SKILL.md
-├── rules/
-│   └── global.mdc                     # Cursor always-on rule
-├── .claude/
-│   └── rules/                         # Claude Code path-scoped rules
-│       ├── web-frontend.md
-│       └── web-backend.md
-├── LICENSE
+├── AGENTS.md              # Universal — copy anywhere
+├── package.json           # CLI: npx @vorlaxen-labs/agent-skills init
+├── src/                   # CLI source
+├── rules/global.mdc       # Cursor always-on
+├── skills/
+│   ├── global/            # Cursor skill (same content as AGENTS.md)
+│   ├── web/               # Frontend & backend modules
+│   └── libraries/         # Vorlaxen npm package skills
 ├── CONTRIBUTING.md
-└── README.md
+├── SKILL-SPEC.md          # Skill authoring specification
+└── LICENSE
 ```
 
-### Which file to use?
-
-| Goal | File |
-|------|------|
-| One file, all tools, team-shared | `AGENTS.md` |
-| Copy-paste anywhere (ChatGPT, API, etc.) | `prompts/*.md` |
-| Cursor always-on | `rules/global.mdc` |
-| Cursor on-demand skills | `skills/*/SKILL.md` |
-| Library skills & API reference | `skills/libraries/{kargomucuz-sdk,bar-js,huk-js}/` |
-| Claude Code path-scoped | `.claude/rules/*.md` |
-
-Keep content in sync: edit `prompts/` or `skills/global/SKILL.md`, then propagate to `AGENTS.md` and `rules/global.mdc`.
+Monorepos: place `AGENTS.md` closer to the code it governs — agents read the nearest file in the tree.
 
 ---
-
-## What Was Deliberately Excluded
-
-These instructions synthesize senior engineering experience — not hype-driven AI prompts:
-
-* Mandatory tech stacks — use the project's existing stack
-* Forced audit blocks or meta-commentary in every response
-* Silent scope expansion
-* 800-line file dumps
-* Infrastructure auto-generation on every task
-
----
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-MIT License — see [LICENSE](LICENSE).
-
-Copyright (c) 2026 Vorlaxen Labs
+MIT — see [LICENSE](LICENSE). Copyright (c) 2026 Vorlaxen Labs.

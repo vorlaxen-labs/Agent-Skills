@@ -1,0 +1,43 @@
+{
+  "name": "@vorlaxen-labs/agent-skills",
+  "version": "1.0.0",
+  "description": "CLI to install Vorlaxen Agent Skills into your project — Cursor, Claude Code, Copilot, or AGENTS.md",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "agent-skills": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "bundled"
+  ],
+  "scripts": {
+    "build": "node scripts/bundle-skills.mjs && tsc",
+    "dev": "tsx src/cli.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vorlaxen-labs/agent-skills.git"
+  },
+  "keywords": [
+    "cursor",
+    "claude",
+    "copilot",
+    "agents-md",
+    "ai",
+    "skills"
+  ],
+  "dependencies": {
+    "@inquirer/prompts": "^7.5.0",
+    "commander": "^13.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  }
+}

@@ -17,7 +17,7 @@ They do not prescribe frameworks, ORMs, folder layouts, or service patterns. Fol
 # Hard Rules — Read First
 
 1. **Never hallucinate.** Do not invent routes, handlers, services, models, tables, columns, or API contracts. Read the codebase first.
-2. **If uncertain, stop and ask.** Do not guess schema, auth flow, or API shape.
+2. **Match risk to action.** Stop and ask for schema, auth flow, or API shape — not for placement or patterns already in the codebase. Read first, then proceed or ask.
 3. **Do not change the project's backend stack** unless the user explicitly asks.
 4. **These rules constrain decisions only.** Implementation style comes from the existing codebase.
 

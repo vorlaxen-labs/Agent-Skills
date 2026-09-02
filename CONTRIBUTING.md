@@ -2,35 +2,31 @@
 
 Thank you for improving Vorlaxen Agent Skills.
 
+**Authoring spec:** [SKILL-SPEC.md](SKILL-SPEC.md) — skill types, structure, frontmatter, reference layout, review checklist.
+
 ## Source of Truth
 
-Content lives in multiple formats for different AI tools. When editing global standards, update **all** of these:
+Global standards must stay in sync across these files:
 
+| File | Purpose |
+|------|---------|
+| `AGENTS.md` | Universal — all tools, project root |
+| `skills/global/SKILL.md` | Cursor on-demand skill |
+| `rules/global.mdc` | Cursor always-on rule |
 
-| File                     | Purpose                          |
-| ------------------------ | -------------------------------- |
-| `prompts/global.md`      | Universal plain markdown         |
-| `AGENTS.md`              | Cross-tool project instructions |
-| `skills/global/SKILL.md` | Cursor skill                     |
-| `rules/global.mdc`       | Cursor always-on rule            |
+Domain-specific modules (`web-frontend`, `web-backend`, library skills):
 
+| File | Purpose |
+|------|---------|
+| `skills/web/*/SKILL.md` | Web domain Cursor skills |
+| `skills/libraries/*/SKILL.md` | Library Cursor skills |
+| `skills/libraries/*/reference/` | Full API documentation per package |
 
-Domain-specific content (`web-frontend`, `web-backend`):
-
-
-| File                     | Purpose                       |
-| ------------------------ | ----------------------------- |
-| `prompts/web-*.md`       | Universal plain markdown      |
-| `skills/web/*/SKILL.md`  | Cursor skills                 |
-| `.claude/rules/web-*.md` | Claude Code path-scoped rules |
-
-
-
+When editing global content, update **all three** global files. When editing a library skill, update `SKILL.md` and the relevant `reference/` files together.
 
 ## Adding a New Module
 
-1. Create `prompts/your-module.md` with plain markdown content.
-2. Add Cursor skill at `skills/your-module/SKILL.md` with frontmatter:
+1. Create `skills/your-module/SKILL.md` with frontmatter:
 
 ```yaml
 ---
@@ -40,36 +36,36 @@ description: >-
 ---
 ```
 
-1. If path-scoped, add `.claude/rules/your-module.md` with `paths:` frontmatter.
-2. Update the modules table in `README.md`.
-3. Open a pull request against `main`.
+2. Add `reference/` docs if the module needs detailed API or domain reference.
+3. Update the modules table in `README.md`.
+4. Open a pull request against `main`.
 
+## Adding a Library Skill
 
+1. Create `skills/libraries/<package-name>/SKILL.md` — concise entry point with critical rules and quick start.
+2. Add verified documentation under `skills/libraries/<package-name>/reference/`.
+3. Cross-check all API claims against the actual package source before merging.
+4. Update `README.md` library table.
 
 ## Content Guidelines
 
 - **Core principle:** Constrain decisions, not implementations.
 - Every module starts with **Core Principle** and **Hard Rules**.
-- Write **Decision:** sections for boundaries, **Required outcome:** for goals, **Not your decision:** for what the project owns.
-- Use MUST / MUST NOT / STOP / ASK — not vague "consider" or "prefer guard clauses".
-- Do not prescribe implementation patterns (specific hooks, syntax, libraries, folder layouts).
-- Do not mandate specific libraries — the project decides how.
+- Write **Decision:** for boundaries, **Required outcome:** for goals, **Not your decision:** for what the project owns.
+- Use MUST / MUST NOT / STOP / ASK — not vague "consider" or "prefer".
+- Do not prescribe implementation patterns, specific libraries, or folder layouts.
 - Keep modules focused and composable.
-
-
 
 ## Platform Compatibility
 
-This repo targets multiple AI tools. Prefer portable markdown over tool-specific features.
+Prefer portable markdown in skill bodies. Tool-specific metadata belongs only in:
 
+| Tool-specific | Files |
+|---------------|-------|
+| Cursor skill `name` / `description` | `skills/**/SKILL.md` frontmatter |
+| Cursor always-on | `rules/global.mdc` frontmatter |
 
-| Tool-specific                        | Portable                    |
-| ------------------------------------ | --------------------------- |
-| `alwaysApply`, `paths`, skill `name` | Plain markdown body         |
-| Cursor `.mdc` frontmatter            | `AGENTS.md`, `prompts/*.md` |
-
-
-Tool-specific frontmatter belongs only in adapter files (`rules/`, `skills/`, `.claude/rules/`). Core content should read the same everywhere.
+Core instruction content should read the same whether pasted into Claude, Copilot, or Cursor.
 
 ## Questions
 
