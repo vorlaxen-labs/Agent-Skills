@@ -3,13 +3,13 @@ import { mkdtemp, readFile, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
-import { runInit } from "../src/commands/init.js";
-import { ValidationError } from "../src/validate.js";
-import { WATERMARK } from "../src/utils/watermark.js";
+import { runInit } from "../../src/commands/init.js";
+import { WATERMARK } from "../../src/markdown.js";
+import { ValidationError } from "../../src/validate.js";
 
 async function tempProject(): Promise<string> {
   return mkdtemp(join(tmpdir(), "agent-skills-test-"));
-};
+}
 
 describe("runInit integration", () => {
   it("rejects unknown platform before writing files", async () => {
@@ -54,6 +54,7 @@ describe("runInit integration", () => {
       cwd,
       platform: "agents-md",
       skills: ["global"],
+      json: true,
     });
 
     const content = await readFile(join(cwd, "AGENTS.md"), "utf8");
@@ -67,6 +68,7 @@ describe("runInit integration", () => {
       cwd,
       platform: "cursor",
       skills: ["global", "web-frontend"],
+      json: true,
     });
 
     await stat(join(cwd, ".cursor", "rules", "global.mdc"));
@@ -81,7 +83,7 @@ describe("runInit integration", () => {
     assert.ok(skill.includes(WATERMARK));
   });
 
-  it("overwrites existing AGENTS.md (current behavior)", async () => {
+  it("appends to existing AGENTS.md with --yes (vorlaxen-first)", async () => {
     const cwd = await tempProject();
     const dest = join(cwd, "AGENTS.md");
     const { writeFile } = await import("node:fs/promises");
@@ -91,11 +93,88 @@ describe("runInit integration", () => {
       cwd,
       platform: "agents-md",
       skills: ["global"],
+      yes: true,
+      json: true,
+    });
+
+    const content = await readFile(dest, "utf8");
+    assert.match(content, /Old content/);
+    assert.match(content, /Constrain decisions, not implementations/);
+    assert.ok(
+      content.indexOf("Constrain decisions") < content.indexOf("Old content"),
+    );
+  });
+
+  it("replaces existing AGENTS.md when --on-conflict replace", async () => {
+    const cwd = await tempProject();
+    const dest = join(cwd, "AGENTS.md");
+    const { writeFile } = await import("node:fs/promises");
+    await writeFile(dest, "# Old content\n");
+
+    await runInit({
+      cwd,
+      platform: "agents-md",
+      skills: ["global"],
+      onConflict: "replace",
+      json: true,
     });
 
     const content = await readFile(dest, "utf8");
     assert.doesNotMatch(content, /Old content/);
     assert.match(content, /Constrain decisions, not implementations/);
+  });
+
+  it("skips existing AGENTS.md when --on-conflict skip", async () => {
+    const cwd = await tempProject();
+    const dest = join(cwd, "AGENTS.md");
+    const { writeFile } = await import("node:fs/promises");
+    await writeFile(dest, "# Old content\n");
+
+    await runInit({
+      cwd,
+      platform: "agents-md",
+      skills: ["global"],
+      onConflict: "skip",
+      json: true,
+    });
+
+    const content = await readFile(dest, "utf8");
+    assert.match(content, /Old content/);
+    assert.doesNotMatch(content, /Constrain decisions/);
+  });
+
+  it("dry-run does not write files", async () => {
+    const cwd = await tempProject();
+    await runInit({
+      cwd,
+      platform: "agents-md",
+      skills: ["global"],
+      dryRun: true,
+      json: true,
+    });
+
+    await assert.rejects(() => stat(join(cwd, "AGENTS.md")));
+  });
+
+  it("writes install manifest after successful init", async () => {
+    const cwd = await tempProject();
+    await runInit({
+      cwd,
+      platform: "agents-md",
+      skills: ["global"],
+      json: true,
+    });
+
+    const manifestPath = join(cwd, ".agent-skills", "manifest.json");
+    await stat(manifestPath);
+    const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as {
+      platform: string;
+      skills: string[];
+      written: string[];
+    };
+    assert.equal(manifest.platform, "agents-md");
+    assert.deepEqual(manifest.skills, ["global"]);
+    assert.ok(manifest.written.length > 0);
   });
 
   it("installs library skill reference tree under .agent-skills", async () => {
@@ -104,6 +183,7 @@ describe("runInit integration", () => {
       cwd,
       platform: "agents-md",
       skills: ["global", "bar-js"],
+      json: true,
     });
 
     await stat(join(cwd, ".agent-skills", "bar-js", "SKILL.md"));

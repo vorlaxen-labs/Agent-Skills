@@ -10,7 +10,7 @@ export class ValidationError extends Error {
 export const PLATFORM_IDS = PLATFORMS.map((p) => p.id);
 export const SKILL_IDS = SKILLS.map((s) => s.id);
 
-export function formatAvailable(ids: readonly string[]): string {
+function formatAvailable(ids: readonly string[]): string {
   return ids.join(", ");
 }
 

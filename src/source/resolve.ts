@@ -1,6 +1,8 @@
 import { statSync } from "node:fs";
 import { GITHUB } from "../catalog.js";
-import { createBundledSource, createGitHubSource, type SkillSource } from "./index.js";
+import { createBundledSource } from "./bundled.js";
+import { createGitHubSource } from "./github.js";
+import type { SkillSource } from "./types.js";
 
 /** undefined/false → bundled; true → package version tag; string → explicit git ref */
 export type RemoteRef = boolean | string | undefined;

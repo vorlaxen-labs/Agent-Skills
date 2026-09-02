@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { resolveRemoteRef } from "../src/source/resolve.js";
+import { resolveRemoteRef } from "../../../src/source/resolve.js";
 
 describe("resolveRemoteRef", () => {
   it("returns null for bundled (default)", () => {

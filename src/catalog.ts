@@ -8,16 +8,11 @@ export interface SkillDefinition {
   id: string;
   label: string;
   category: SkillCategory;
-  /** Paths relative to repo root — fetched selectively */
   paths: string[];
-  /** Cursor skill directory name */
   cursorSkillName: string;
-  /** Claude Code rule filename (without path) */
   claudeRuleName: string;
   defaultSelected: boolean;
-  /** Library skills only — pinned npm package */
   npmPackage?: string;
-  /** Library skills only — docs verified against this version */
   npmVersion?: string;
 }
 

@@ -4,7 +4,7 @@ import {
   parsePlatform,
   parseSkillIds,
   ValidationError,
-} from "../src/validate.js";
+} from "../../src/validate.js";
 
 describe("parsePlatform", () => {
   it("accepts valid platform ids", () => {

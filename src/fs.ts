@@ -1,8 +1,17 @@
-import { mkdir, writeFile, stat } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
+import { mkdir, readFile, writeFile, stat } from "node:fs/promises";
+import { dirname } from "node:path";
+
+export function projectPath(cwd: string, ...segments: string[]): string {
+  return join(cwd, ...segments);
+}
 
 export async function ensureDir(filePath: string): Promise<void> {
   await mkdir(dirname(filePath), { recursive: true });
+}
+
+export async function readTextFile(filePath: string): Promise<string> {
+  return readFile(filePath, "utf8");
 }
 
 export async function writeTextFile(
@@ -20,8 +29,4 @@ export async function pathExists(path: string): Promise<boolean> {
   } catch {
     return false;
   }
-}
-
-export function projectPath(cwd: string, ...segments: string[]): string {
-  return join(cwd, ...segments);
 }

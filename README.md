@@ -69,6 +69,35 @@ npx @vorlaxen-labs/agent-skills init --remote=main
 
 Invalid `--platform` or `--skills` values are rejected with a list of available options.
 
+**List available platforms and skills:**
+
+```bash
+npx @vorlaxen-labs/agent-skills list
+npx @vorlaxen-labs/agent-skills list --json
+```
+
+**Existing agent files** — if `AGENTS.md`, `.cursor/rules/*`, or similar files already exist, the CLI asks what to do:
+
+- **Replace** with Vorlaxen content
+- **Append** to existing content (then asks which content is primary for the agent)
+- **Skip** — leave your files unchanged
+
+Non-interactive defaults (`--yes`): append with Vorlaxen content first. Override with:
+
+```bash
+# Preview without writing
+npx @vorlaxen-labs/agent-skills init --dry-run --platform cursor --skills global
+
+# Force replace or skip
+npx @vorlaxen-labs/agent-skills init --on-conflict replace --platform agents-md --skills global
+npx @vorlaxen-labs/agent-skills init --on-conflict skip --platform agents-md --skills global
+
+# Append with your content first
+npx @vorlaxen-labs/agent-skills init --on-conflict append --append-order existing-first --yes
+```
+
+After a successful install, metadata is written to `.agent-skills/manifest.json`.
+
 **Manual install** (alternative):
 
 ```bash
@@ -126,6 +155,13 @@ agent-skills/
 ├── AGENTS.md              # Universal — copy anywhere
 ├── package.json           # CLI: npx @vorlaxen-labs/agent-skills init
 ├── src/                   # CLI source
+│   ├── commands/          # init, list
+│   ├── install/           # plan, execute, merge, planners
+│   ├── source/            # bundled + GitHub fetch
+│   ├── conflict/          # detect + resolve existing files
+│   ├── catalog.ts         # platforms & skills
+│   ├── validate.ts
+│   ├── fs.ts, markdown.ts, output.ts, version.ts
 ├── rules/global.mdc       # Cursor always-on
 ├── skills/
 │   ├── global/            # Cursor skill (same content as AGENTS.md)
