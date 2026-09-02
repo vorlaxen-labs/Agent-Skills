@@ -14,7 +14,7 @@
   "scripts": {
     "build": "node scripts/bundle-skills.mjs && tsc",
     "dev": "tsx src/cli.ts",
-    "test": "npm run build && tsx --test test/**/*.test.ts",
+    "test": "npm run build && node scripts/run-tests.mjs",
     "check:sync": "node scripts/check-sync.mjs",
     "check:libraries": "node scripts/check-library-versions.mjs",
     "check": "npm run check:sync && npm run check:libraries",
