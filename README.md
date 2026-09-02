@@ -7,11 +7,13 @@
 
 Works with Cursor, Claude Code, Copilot, Windsurf, Codex, Gemini CLI, and any tool that reads custom instructions.
 
+Maintained by [Vorlaxen Labs](https://github.com/vorlaxen-labs) as both our internal agent config and an open community standard.
+
 ---
 
 ## What is this?
 
-This repo serves **two purposes**. Pick what you need:
+This repository is two things in one:
 
 | | **Engineering standards** | **Vorlaxen library skills** |
 |---|---|---|
@@ -19,10 +21,11 @@ This repo serves **two purposes**. Pick what you need:
 | **What** | Rules that stop agents from hallucinating, over-scoping, or asking permission for every pixel | Verified API docs so agents use `bar-js`, `huk-js`, `kargomucuz-sdk` correctly |
 | **Start here** | [`AGENTS.md`](AGENTS.md) | [`skills/libraries/`](skills/libraries/) |
 
-**Not Vorlaxen-specific?** Copy `AGENTS.md` and ignore the library folder.  
+**Not Vorlaxen-specific?** Copy [`AGENTS.md`](AGENTS.md) and ignore the library folder.
+
 **Using Vorlaxen packages?** Add the matching library skill on top of the global standards.
 
-Maintained by [Vorlaxen Labs](https://github.com/vorlaxen-labs) as both our internal agent config and an open community standard. Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
+The [`@vorlaxen-labs/agent-skills`](https://www.npmjs.com/package/@vorlaxen-labs/agent-skills) CLI installs the right files into your project for your platform — interactively or in CI. Full CLI reference lives in [`docs/`](docs/README.md).
 
 ---
 
@@ -43,220 +46,38 @@ Full rules: [`AGENTS.md`](AGENTS.md)
 
 ---
 
-## Quick start
+## What's included
+
+### Engineering standards
+
+Universal modules for every project — global rules plus optional web frontend and backend skills. See [Included skills](docs/included-skills.md).
+
+### Vorlaxen library skills
+
+Optional skills for `@vorlaxen-labs/bar-js`, `@vorlaxen-labs/huk-js`, and `@vorlaxen-labs/kargomucuz-sdk`. Each ships with a `SKILL.md` entry point and a `reference/` folder with full API documentation verified against source.
+
+---
+
+## Get started
 
 ```bash
 npx @vorlaxen-labs/agent-skills init
 ```
 
-Interactive setup — pick your platform (AGENTS.md, Cursor, Claude Code, Copilot) and the skills you need. Only selected files are fetched; no full repo clone.
-
-**Non-interactive example:**
-
-```bash
-npx @vorlaxen-labs/agent-skills init --platform cursor --skills global,web-frontend,bar-js
-```
-
-**Remote source** (optional — default uses the bundled snapshot shipped with your CLI version):
-
-```bash
-# Same version tag as the installed CLI (e.g. v1.0.0)
-npx @vorlaxen-labs/agent-skills init --remote
-
-# Bleeding-edge from main
-npx @vorlaxen-labs/agent-skills init --remote=main
-```
-
-Invalid `--platform` or `--skills` values are rejected with a list of available options.
-
-**List available platforms and skills:**
-
-```bash
-npx @vorlaxen-labs/agent-skills list
-npx @vorlaxen-labs/agent-skills list --json
-```
-
-**Existing agent files** — if `AGENTS.md`, `.cursor/rules/*`, or similar files already exist, the CLI asks what to do:
-
-- **Replace** with Vorlaxen content
-- **Append** to existing content (then asks which content is primary for the agent)
-- **Skip** — leave your files unchanged
-
-Non-interactive defaults (`--yes`): append with Vorlaxen content first. Override with:
-
-```bash
-# Preview without writing
-npx @vorlaxen-labs/agent-skills init --dry-run --platform cursor --skills global
-
-# Force replace or skip
-npx @vorlaxen-labs/agent-skills init --on-conflict replace --platform agents-md --skills global
-npx @vorlaxen-labs/agent-skills init --on-conflict skip --platform agents-md --skills global
-
-# Append with your content first
-npx @vorlaxen-labs/agent-skills init --on-conflict append --append-order existing-first --yes
-
-# Per-path override (repeatable)
-npx @vorlaxen-labs/agent-skills init --on-conflict append --on-conflict-for AGENTS.md=append --yes
-```
-
-Manifest v2 stores `writtenBySkill`, `contentHashes`, and per-path conflict overrides in `.agent-skills/manifest.json`.
-
-### Lifecycle commands
-
-**Check installation health:**
-
-```bash
-npx @vorlaxen-labs/agent-skills doctor
-npx @vorlaxen-labs/agent-skills doctor --json
-npx @vorlaxen-labs/agent-skills doctor --fix          # restore missing/drifted files
-npx @vorlaxen-labs/agent-skills doctor --fix-update   # run update from doctor
-npx @vorlaxen-labs/agent-skills doctor --strict         # exit 1 on warnings
-```
-
-**Update installed skills** (inherits conflict policy from manifest; override with `--on-conflict`):
-
-```bash
-npx @vorlaxen-labs/agent-skills update
-npx @vorlaxen-labs/agent-skills update --remote=main
-npx @vorlaxen-labs/agent-skills update --on-conflict inherit
-npx @vorlaxen-labs/agent-skills update --dry-run
-```
-
-**Add or remove skills** without a full re-init:
-
-```bash
-npx @vorlaxen-labs/agent-skills add web-frontend bar-js
-npx @vorlaxen-labs/agent-skills remove bar-js --yes
-```
-
-**Quick status summary:**
-
-```bash
-npx @vorlaxen-labs/agent-skills status
-npx @vorlaxen-labs/agent-skills status --json
-```
-
-**Preview changes** without writing:
-
-```bash
-npx @vorlaxen-labs/agent-skills diff
-npx @vorlaxen-labs/agent-skills diff --json
-npx @vorlaxen-labs/agent-skills diff --check   # exit 1 if any drift (CI-friendly)
-```
-
-**Remove installed files:**
-
-```bash
-npx @vorlaxen-labs/agent-skills uninstall
-npx @vorlaxen-labs/agent-skills uninstall --yes
-npx @vorlaxen-labs/agent-skills uninstall --force   # remove files without watermark
-```
-
-# Per-path override (repeatable)
-npx @vorlaxen-labs/agent-skills init --on-conflict append --on-conflict-for AGENTS.md=append --yes
-```
-
-Manifest v2 stores `writtenBySkill`, `contentHashes`, and per-path conflict overrides in `.agent-skills/manifest.json`.
-
-**GitHub fetch cache** — responses are cached under `~/.cache/agent-skills/`. Bypass with `--no-cache` on `init`, `update`, or `diff`. Set `GITHUB_TOKEN` for higher GitHub API rate limits.
-
-**Shell completion:**
-
-```bash
-agent-skills completion bash >> ~/.bashrc
-agent-skills completion zsh  >> ~/.zshrc
-agent-skills completion fish >> ~/.config/fish/completions/agent-skills.fish
-```
-
-### Release (maintainers)
-
-Publish to npm via GitHub tag (requires `NPM_TOKEN` repo secret):
-
-```bash
-git tag v1.3.0
-git push origin v1.3.0
-```
-
-CI runs checks + tests, then `npm publish` and creates a GitHub Release.
-
-**Manual install** (alternative):
-
-```bash
-git clone https://github.com/vorlaxen-labs/agent-skills.git
-cp agent-skills/AGENTS.md /path/to/your-project/
-```
-
-That's it for most tools. [`AGENTS.md`](AGENTS.md) follows the [open AGENTS.md standard](https://agents.md/) — Claude Code, Cursor, Copilot, and others pick it up from the project root.
-
-**Cursor users** — for always-on rules and on-demand skills:
-
-```bash
-cp agent-skills/rules/global.mdc ~/.cursor/rules/
-cp -r agent-skills/skills/global ~/.cursor/skills/
-# optional: cp -r agent-skills/skills/web/* ~/.cursor/skills/
-# optional: cp -r agent-skills/skills/libraries/* ~/.cursor/skills/
-```
-
-**Claude Code** — `cp AGENTS.md ~/.claude/CLAUDE.md` or into your project as `CLAUDE.md`.
-
-For other tools, paste `AGENTS.md` into custom instructions. Append a skill's body (skip YAML frontmatter) when you need web or library modules.
+| Topic | Documentation |
+|-------|---------------|
+| Quick start and examples | [docs/quick-start.md](docs/quick-start.md) |
+| All CLI commands | [docs/README.md](docs/README.md) |
+| Conflicts and manifest | [docs/conflicts-and-manifest.md](docs/conflicts-and-manifest.md) |
+| Remote source and cache | [docs/remote-and-cache.md](docs/remote-and-cache.md) |
+| Telemetry | [docs/telemetry.md](docs/telemetry.md) |
+| Manual install (without CLI) | [docs/manual-install.md](docs/manual-install.md) |
 
 ---
 
-## What's included
+## Contributing
 
-### Engineering standards (universal)
-
-| Module | File | When to use |
-|--------|------|-------------|
-| Global | [`AGENTS.md`](AGENTS.md) | Every project |
-| Web frontend | [`skills/web/frontend/SKILL.md`](skills/web/frontend/SKILL.md) | UI, components, forms |
-| Web backend | [`skills/web/backend/SKILL.md`](skills/web/backend/SKILL.md) | APIs, services, auth, DB |
-
-Same global content also lives at [`skills/global/SKILL.md`](skills/global/SKILL.md) (Cursor skill) and [`rules/global.mdc`](rules/global.mdc) (Cursor always-on rule). Keep all three in sync when editing.
-
-### Vorlaxen library skills (optional)
-
-For [@vorlaxen-labs](https://github.com/vorlaxen-labs) packages — verified against source, not guessed from npm names.
-
-| Package | Skill |
-|---------|-------|
-| `@vorlaxen-labs/kargomucuz-sdk` | [`skills/libraries/kargomucuz-sdk/`](skills/libraries/kargomucuz-sdk/) |
-| `@vorlaxen-labs/bar-js` | [`skills/libraries/bar-js/`](skills/libraries/bar-js/) |
-| `@vorlaxen-labs/huk-js` | [`skills/libraries/huk-js/`](skills/libraries/huk-js/) |
-
-Each has a `SKILL.md` entry point and a `reference/` folder with full API docs.
-
----
-
-## Repo layout
-
-```
-agent-skills/
-├── AGENTS.md              # Universal — copy anywhere
-├── package.json           # CLI: npx @vorlaxen-labs/agent-skills init
-├── src/                   # CLI source
-│   ├── commands/          # init, list, doctor, update, diff, uninstall, add, remove, status, completion
-│   ├── install/           # plan, execute, merge, run, manifest v2, skill-paths
-│   ├── doctor/            # health checks, npm drift, fix
-│   ├── source/            # bundled + GitHub fetch + cache
-│   ├── conflict/          # detect + resolve + per-path policy
-│   ├── diff/              # unified diff helper
-│   ├── cli-options.ts     # shared install flags
-│   ├── catalog.ts         # platforms & skills
-│   ├── validate.ts
-│   ├── fs.ts, markdown.ts, output.ts, version.ts
-├── rules/global.mdc       # Cursor always-on
-├── skills/
-│   ├── global/            # Cursor skill (same content as AGENTS.md)
-│   ├── web/               # Frontend & backend modules
-│   └── libraries/         # Vorlaxen npm package skills
-├── CONTRIBUTING.md
-├── SKILL-SPEC.md          # Skill authoring specification
-└── LICENSE
-```
-
-Monorepos: place `AGENTS.md` closer to the code it governs — agents read the nearest file in the tree.
+Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Skill authoring spec: [SKILL-SPEC.md](SKILL-SPEC.md).
 
 ---
 
