@@ -14,6 +14,16 @@ Decision boundaries for AI coding agents — what they may decide, what they mus
 
 Global content also lives at [`skills/global/SKILL.md`](../skills/global/SKILL.md) (Cursor skill) and [`rules/global.mdc`](../rules/global.mdc) (Cursor always-on rule). Keep all three in sync when editing.
 
+## Audit modules (optional)
+
+Scan-and-report workflows with bundled tooling (scanner scripts, reference playbooks). Installed under `.agent-skills/<id>/` on AGENTS.md / Copilot / Claude Code, and under `.cursor/skills/<id>/` on Cursor. Audit bodies are **not** merged into `AGENTS.md` — load the skill when you run an audit.
+
+| Module | Id | When to use |
+|--------|----|-------------|
+| Kill AI slop | `kill-ai-slop` | De-slop landing pages and UI (scan → report → fix) |
+
+Registry: [`skills/audits/manifest.json`](../skills/audits/manifest.json). After install, audit ids also appear in `.agent-skills/manifest.json` under `audits`.
+
 ## Vorlaxen library skills (optional)
 
 For [@vorlaxen-labs](https://github.com/vorlaxen-labs) npm packages — verified against source, not guessed from package names.

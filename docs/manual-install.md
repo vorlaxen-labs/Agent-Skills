@@ -19,6 +19,7 @@ For always-on rules and on-demand skills:
 cp agent-skills/rules/global.mdc ~/.cursor/rules/
 cp -r agent-skills/skills/global ~/.cursor/skills/
 # optional: cp -r agent-skills/skills/web/* ~/.cursor/skills/
+# optional: cp -r agent-skills/skills/audits/* ~/.cursor/skills/
 # optional: cp -r agent-skills/skills/libraries/* ~/.cursor/skills/
 ```
 

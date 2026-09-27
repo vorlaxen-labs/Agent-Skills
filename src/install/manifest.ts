@@ -8,6 +8,7 @@ import { pathExists, projectPath, readTextFile, writeTextFile } from "../fs.js";
 import type { RemoteRef } from "../source/resolve.js";
 import { getPackageVersion } from "../version.js";
 import { hashContent } from "./hash.js";
+import { auditSkillIds } from "./skill-categories.js";
 import { buildWrittenBySkill } from "./skill-paths.js";
 import type { InstallResult } from "./types.js";
 
@@ -18,6 +19,8 @@ export interface InstallManifest {
   cliVersion: string;
   platform: Platform;
   skills: string[];
+  /** Installed audit module ids (subset of `skills`; see skills/audits/manifest.json) */
+  audits: string[];
   remote: RemoteRef | null;
   installedAt: string;
   conflictPolicy: ConflictPolicyV2 | null;
@@ -80,6 +83,9 @@ function migrateV1(
     cliVersion: typeof m.cliVersion === "string" ? m.cliVersion : "",
     platform,
     skills,
+    audits: Array.isArray(m.audits)
+      ? (m.audits as string[])
+      : auditSkillIds(skills),
     remote: (m.remote ?? null) as RemoteRef | null,
     installedAt: typeof m.installedAt === "string" ? m.installedAt : "",
     conflictPolicy,
@@ -131,11 +137,16 @@ function validateManifest(raw: unknown, path: string, cwd: string): InstallManif
       ? (m.contentHashes as Record<string, string>)
       : {};
 
+  const skills = m.skills as string[];
+
   return {
     schemaVersion: MANIFEST_SCHEMA_VERSION,
     cliVersion: typeof m.cliVersion === "string" ? m.cliVersion : "",
     platform: platform as Platform,
-    skills: m.skills as string[],
+    skills,
+    audits: Array.isArray(m.audits)
+      ? (m.audits as string[])
+      : auditSkillIds(skills),
     remote: (m.remote ?? null) as RemoteRef | null,
     installedAt: typeof m.installedAt === "string" ? m.installedAt : "",
     conflictPolicy,
@@ -191,6 +202,7 @@ export function buildManifest(
     cliVersion: getPackageVersion(),
     platform,
     skills,
+    audits: auditSkillIds(skills),
     remote: remote ?? null,
     installedAt: new Date().toISOString(),
     conflictPolicy: normalized,
@@ -217,11 +229,14 @@ export function mergeManifests(
 
   const contentHashes = { ...existing.contentHashes, ...incoming.contentHashes };
 
+  const skills = [...new Set([...existing.skills, ...incoming.skills])];
+
   return {
     schemaVersion: MANIFEST_SCHEMA_VERSION,
     cliVersion: incoming.cliVersion || getPackageVersion(),
     platform: existing.platform,
-    skills: [...new Set([...existing.skills, ...incoming.skills])],
+    skills,
+    audits: auditSkillIds(skills),
     remote: incoming.remote ?? existing.remote,
     installedAt: new Date().toISOString(),
     conflictPolicy: incoming.conflictPolicy ?? existing.conflictPolicy,
@@ -239,6 +254,7 @@ export function removeSkillsFromManifest(
 ): InstallManifest {
   const removedSet = new Set(removedPaths);
   const skills = manifest.skills.filter((id) => !skillIds.includes(id));
+  const audits = auditSkillIds(skills);
   const written = manifest.written.filter((p) => !removedSet.has(p));
   const skipped = manifest.skipped.filter((p) => !removedSet.has(p));
 
@@ -251,6 +267,7 @@ export function removeSkillsFromManifest(
   return {
     ...manifest,
     skills,
+    audits,
     written,
     skipped,
     writtenBySkill,

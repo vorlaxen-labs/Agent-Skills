@@ -1,8 +1,9 @@
-import libraryManifest from "../skills/libraries/manifest.json" with { type: "json" };
+import auditManifest from "../bundled/skills/audits/manifest.json" with { type: "json" };
+import libraryManifest from "../bundled/skills/libraries/manifest.json" with { type: "json" };
 
 export type Platform = "agents-md" | "cursor" | "claude-code" | "copilot";
 
-export type SkillCategory = "standard" | "domain" | "library";
+export type SkillCategory = "standard" | "domain" | "audit" | "library";
 
 export interface SkillDefinition {
   id: string;
@@ -14,6 +15,26 @@ export interface SkillDefinition {
   defaultSelected: boolean;
   npmPackage?: string;
   npmVersion?: string;
+}
+
+interface AuditManifestEntry {
+  skillPath: string;
+  label: string;
+  defaultSelected?: boolean;
+  scanner?: string;
+}
+
+function auditSkillsFromManifest(): SkillDefinition[] {
+  const audits = auditManifest.audits as Record<string, AuditManifestEntry>;
+  return Object.entries(audits).map(([id, entry]) => ({
+    id,
+    label: entry.label,
+    category: "audit" as const,
+    paths: [entry.skillPath],
+    cursorSkillName: id,
+    claudeRuleName: `${id}.md`,
+    defaultSelected: entry.defaultSelected ?? false,
+  }));
 }
 
 export const PLATFORMS: { id: Platform; label: string }[] = [
@@ -51,6 +72,7 @@ export const SKILLS: SkillDefinition[] = [
     claudeRuleName: "web-backend.md",
     defaultSelected: true,
   },
+  ...auditSkillsFromManifest(),
   {
     id: "bar-js",
     label: "bar-js",

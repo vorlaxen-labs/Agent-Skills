@@ -25,11 +25,22 @@ export function filesUnder(
 }
 
 export function planLibraryAssets(ctx: InstallContext): PlannedWrite[] {
+  return planBundledSkillAssets(ctx, "library");
+}
+
+export function planAuditAssets(ctx: InstallContext): PlannedWrite[] {
+  return planBundledSkillAssets(ctx, "audit");
+}
+
+function planBundledSkillAssets(
+  ctx: InstallContext,
+  category: "library" | "audit",
+): PlannedWrite[] {
   const index = indexFilesByPath(ctx.files);
   const planned: PlannedWrite[] = [];
 
   for (const skill of ctx.skills) {
-    if (skill.category !== "library") continue;
+    if (skill.category !== category) continue;
     const prefix = skill.paths[0];
     const destDir = projectPath(ctx.cwd, ".agent-skills", skill.cursorSkillName);
 

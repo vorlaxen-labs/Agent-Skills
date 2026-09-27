@@ -29,6 +29,7 @@ npx @vorlaxen-labs/agent-skills list --json
 | `global` | Standard | Yes |
 | `web-frontend` | Domain | Yes |
 | `web-backend` | Domain | Yes |
+| `kill-ai-slop` | Audit | No |
 | `bar-js` | Library | No |
 | `huk-js` | Library | No |
 | `kargomucuz-sdk` | Library | No |

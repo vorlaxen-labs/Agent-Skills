@@ -19,7 +19,12 @@ export function planForSkill(
     files: ctx.files,
   };
 
-  if (platform === "agents-md" && skill.id !== "global" && skill.category !== "library") {
+  if (
+    platform === "agents-md" &&
+    skill.id !== "global" &&
+    skill.category !== "library" &&
+    skill.category !== "audit"
+  ) {
     return [];
   }
 

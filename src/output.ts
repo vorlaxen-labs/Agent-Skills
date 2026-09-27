@@ -197,6 +197,7 @@ export interface StatusResultPayload {
   installed: boolean;
   platform?: string;
   skills?: string[];
+  audits?: string[];
   cliVersion?: string;
   currentCliVersion?: string;
   installedAt?: string;
@@ -220,6 +221,9 @@ export function printStatusResult(payload: StatusResultPayload): void {
   console.log("\nAgent Skills Status\n");
   console.log(`  Platform:  ${payload.platform}`);
   console.log(`  Skills:    ${payload.skills?.join(", ")}`);
+  if (payload.audits && payload.audits.length > 0) {
+    console.log(`  Audits:    ${payload.audits.join(", ")}`);
+  }
   console.log(`  CLI:       ${payload.cliVersion} (current: ${payload.currentCliVersion})`);
   console.log(`  Installed: ${payload.installedAt}`);
 

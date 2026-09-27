@@ -189,4 +189,23 @@ describe("runInit integration", () => {
     await stat(join(cwd, ".agent-skills", "bar-js", "SKILL.md"));
     await stat(join(cwd, ".agent-skills", "bar-js", "reference", "api-reference.md"));
   });
+
+  it("installs audit module tree under .agent-skills without merging into AGENTS.md", async () => {
+    const cwd = await tempProject();
+    await runInit({
+      cwd,
+      platform: "agents-md",
+      skills: ["global", "kill-ai-slop"],
+      json: true,
+    });
+
+    await stat(join(cwd, ".agent-skills", "kill-ai-slop", "scripts", "scan.mjs"));
+    const agents = await readFile(join(cwd, "AGENTS.md"), "utf8");
+    assert.doesNotMatch(agents, /Kill AI Slop/);
+
+    const manifest = JSON.parse(
+      await readFile(join(cwd, ".agent-skills", "manifest.json"), "utf8"),
+    );
+    assert.deepEqual(manifest.audits, ["kill-ai-slop"]);
+  });
 });

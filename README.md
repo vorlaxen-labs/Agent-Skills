@@ -50,7 +50,7 @@ Full rules: [`AGENTS.md`](AGENTS.md)
 
 ### Engineering standards
 
-Universal modules for every project — global rules plus optional web frontend and backend skills. See [Included skills](docs/included-skills.md).
+Universal modules for every project — global rules, optional web frontend/backend, and [audit modules](skills/audits/kill-ai-slop/README.md) such as `kill-ai-slop`. See [Included skills](docs/included-skills.md).
 
 ### Vorlaxen library skills
 

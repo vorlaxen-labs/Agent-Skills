@@ -61,7 +61,7 @@ export async function runInit(options: InitOptions = {}): Promise<void> {
       : await checkbox<string>({
           message: "Skills",
           choices: SKILLS.map((s) => ({
-            name: s.label,
+            name: `${s.label} [${s.category}]`,
             value: s.id,
             checked: s.defaultSelected,
           })),

@@ -19,6 +19,8 @@ Domain-specific modules (`web-frontend`, `web-backend`, library skills):
 | File | Purpose |
 |------|---------|
 | `skills/web/*/SKILL.md` | Web domain Cursor skills |
+| `skills/audits/manifest.json` | Audit module registry (ids, paths, scanner) |
+| `skills/audits/*/SKILL.md` | Audit modules (scan/report workflows + scripts) |
 | `skills/libraries/*/SKILL.md` | Library Cursor skills |
 | `skills/libraries/*/reference/` | Full API documentation per package |
 

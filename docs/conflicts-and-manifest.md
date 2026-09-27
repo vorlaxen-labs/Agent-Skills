@@ -51,6 +51,7 @@ When appending:
 After install, the CLI writes `.agent-skills/manifest.json` with:
 
 - Selected platform and skills
+- `audits` — installed audit module ids (subset of `skills`; registry in repo `skills/audits/manifest.json`)
 - Remote source settings (if used)
 - Conflict policy and per-path overrides
 - `writtenBySkill` — which skill owns each path

@@ -37,6 +37,7 @@ export async function runStatus(options: StatusOptions = {}): Promise<void> {
     installed: true,
     platform: manifest.platform,
     skills: manifest.skills,
+    audits: manifest.audits,
     cliVersion: manifest.cliVersion,
     currentCliVersion: getPackageVersion(),
     installedAt: manifest.installedAt,

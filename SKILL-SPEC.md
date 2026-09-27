@@ -38,7 +38,17 @@ Extra decision boundaries on top of global — e.g. web frontend, web backend.
 
 Domain modules **extend** global standards. They do not repeat the full global document — they add domain-specific boundaries only.
 
-### 3. Library skills
+### 3. Audit modules
+
+Optional scan-and-report workflows with bundled scripts and reference playbooks (not decision-boundary standards).
+
+| Path | `name` | Scope |
+|------|--------|-------|
+| `skills/audits/kill-ai-slop/` | `kill-ai-slop` | AI slop scan → triage → report → fix |
+
+Catalog `category`: **`audit`**. Register each module in `skills/audits/manifest.json` (source of truth for ids, paths, labels). CLI installs assets under `.agent-skills/<id>/` (and `.cursor/skills/<id>/` on Cursor). Installed projects record audit ids in `.agent-skills/manifest.json` → `audits`. Audit `SKILL.md` bodies are **not** appended to `AGENTS.md` / Copilot instructions.
+
+### 4. Library skills
 
 Verified domain knowledge for a specific package. Prevents agents from inventing APIs.
 
@@ -57,6 +67,17 @@ Library skills **require** a `reference/` folder. All API claims must be cross-c
 ```
 skills/web/frontend/
 └── SKILL.md
+```
+
+### Audit module (workflow + tooling)
+
+```
+skills/audits/kill-ai-slop/
+├── SKILL.md
+├── references/          # taxonomy, detection, fixes
+└── scripts/
+    ├── scan.mjs         # dependency-free scanner (read-only)
+    └── rules.ru.mjs     # example --rules module
 ```
 
 ### Library skill (standard)
